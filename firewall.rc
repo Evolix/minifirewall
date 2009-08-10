@@ -1,0 +1,62 @@
+# Fichier de configuration
+# pour minifirewall
+
+# version 0.1 - 12 juillet 2007 $Id: firewall.rc,v 1.2 2007/07/12 19:08:59 reg Exp $
+
+# Interface concernee
+INT='eth0'
+
+# IP associee
+INTIP='192.168.0.2'
+INTLAN='192.168.0.0/24'
+
+# trusted ip addresses
+TRUSTEDIPS='62.212.121.90 62.212.111.216'
+
+# privilegied ip addresses
+# (trusted ip addresses *are* privilegied)
+PRIVILEGIEDIPS=''
+
+# Services "publics"
+SERVICESTCP1='21 25 53 993 995'
+SERVICESUDP1='53'
+
+# Services "semi-publics"
+SERVICESTCP2='22 25 53 80 110 143 443'
+SERVICESUDP2=''
+
+# Services "prives"
+SERVICESTCP3='636 5666'
+SERVICESUDP3=''
+
+################### SORTANTS
+
+# DNS
+DNSSERVEURS='85.31.205.33 78.153.240.29'
+
+# HTTP : security.d.o x3, zidane, modsecurity www.debian.org
+# /!\ Possibilite d'utiliser des noms de domaines
+#     mais il est conseiller de placer un rechargement
+#     du minifirewall en crontab
+HTTPSITES='security.debian.org 85.31.205.33 80.25.139.226 www.debian.org'
+
+# HTTPS
+HTTPSSITES=''
+
+# FTP
+FTPSITES=''
+
+# SSH
+SSHOK='0.0.0.0/0'
+
+# SMTP
+SMTPOK='0.0.0.0/0'
+
+# NTP
+NTPOK='78.153.240.29'
+
+
+################### Specific rules
+# /sbin/iptables ....
+# /sbin/iptables ....
+# /sbin/iptables ....
