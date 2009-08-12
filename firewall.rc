@@ -8,39 +8,53 @@ INT='eth0'
 
 # IP associee
 INTIP='192.168.0.2'
-INTLAN='192.168.0.0/24'
+# reseau beneficiant d'acces privilegies
+# (sera souvent IP/32)
+INTLAN='192.168.0.2/32'
 
 # trusted ip addresses
-TRUSTEDIPS='62.212.121.90 62.212.111.216'
+TRUSTEDIPS='62.212.121.90 62.212.111.216 88.179.18.233 85.118.59.4'
 
 # privilegied ip addresses
 # (trusted ip addresses *are* privilegied)
 PRIVILEGIEDIPS=''
 
+# Services "protected"
+# a mettre aussi en public si necessaire !!
+SERVICESTCP1p='21'
+SERVICESUDP1p=''
+
 # Services "publics"
-SERVICESTCP1='21 25 53 993 995'
+SERVICESTCP1='20 21 25 53 993 995'
 SERVICESUDP1='53'
 
 # Services "semi-publics"
-SERVICESTCP2='22 25 53 80 110 143 443'
+SERVICESTCP2='22 80 110 143 443'
 SERVICESUDP2=''
 
 # Services "prives"
-SERVICESTCP3='636 5666'
+SERVICESTCP3='5666'
 SERVICESUDP3=''
 
 ################### SORTANTS
 
 # DNS
+# (Attention, si un serveur DNS est installe en local
+#  mettre 0.0.0.0/0)
 DNSSERVEURS='85.31.205.33 78.153.240.29'
 
 # HTTP : security.d.o x3, zidane, modsecurity www.debian.org
 # /!\ Possibilite d'utiliser des noms de domaines
 #     mais il est conseiller de placer un rechargement
 #     du minifirewall en crontab
+# (Attention, si un proxy HTTP est installe en local
+#  mettre 0.0.0.0/0)
 HTTPSITES='security.debian.org 85.31.205.33 80.25.139.226 www.debian.org'
 
 # HTTPS
+# /!\ Possibilite d'utiliser des noms de domaines
+#     mais il est conseiller de placer un rechargement
+#     du minifirewall en crontab
 HTTPSSITES=''
 
 # FTP

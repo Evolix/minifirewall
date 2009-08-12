@@ -1,9 +1,10 @@
 #!/bin/sh
 
-# version 0.1.1 - 13 avril 2009 : firewall.rc est charge un peu plus loin
+# version 0.2 - 10 aout 2009 : add NEEDRESTRICT chain
+# version 0.1.1 - 13 avril 2009 : firewall.rc is loaded later
 # version 0.1 - 12 juillet 2007 $Id: minifirewall,v 1.6 2007/07/12 19:08:59 reg Exp $
 
-# Copyright (c) 2007 Gregory Colpart
+# Copyright (c) 2007-2009 Gregory Colpart
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
@@ -16,7 +17,7 @@
 # http://www.kernel.org/
 
 # Description
-# script pour machine unique
+# script for local server
 
 ###
 # Configuration des variables
@@ -24,6 +25,9 @@
 
 # chemin iptables
 IPT=/sbin/iptables
+
+# Configuration
+test -f /etc/firewall.rc && . /etc/firewall.rc
 
 # variables TCP/IP
 LOOPBACK='127.0.0.0/8'
@@ -108,6 +112,9 @@ for x in $PRIVILEGIEDIPS
         $IPT -I ONLYPRIVILEGIED -s $x -j ACCEPT
     done
 
+# chain for restrictions (blacklist ips/ranges)
+$IPT -N NEEDRESTRICT
+
 # politique
 
 # par defaut rien ne rentre
@@ -126,7 +133,7 @@ $IPT -A INPUT -i lo -j ACCEPT
 
 # on evite pas mal de paquets "martiens" effet de bord de virus
 # notamment W32/Blaster qui attaquait windowsupdate.com
-# et dont l'enregistrement DNS a ete change pour 127.0.0.1 
+# et dont l'enregistrement DNS avait ete change pour 127.0.0.1 
 # $IPT -t NAT -I PREROUTING -s $LOOPBACK -i ! lo -j DROP 
 $IPT -A INPUT -s $LOOPBACK -i ! lo -j DROP 
 
@@ -137,6 +144,17 @@ $IPT -A INPUT -s $LOOPBACK -i ! lo -j DROP
 # Les services accessibles en local ?
 #$IPT -A INPUT -i $INT2 -j ACCEPT
 $IPT -A INPUT -s $INTLAN -j ACCEPT
+
+# On passe tout d'abord par la chaine de protection pour certains services
+for x in $SERVICESTCP1p
+    do
+        $IPT -A INPUT -p tcp --dport $x -j NEEDRESTRICT
+    done
+
+for x in $SERVICESUDP1p
+    do
+        $IPT -A INPUT -p udp --dport $x -j NEEDRESTRICT
+    done
 
 # Services publics
 for x in $SERVICESTCP1
@@ -269,6 +287,7 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     $IPT -X ONLYPRIVILEGIED
     $IPT -X ONLYTRUSTED
     $IPT -X ICMP_STACK
+    $IPT -X NEEDRESTRICT
 
     echo "OK"
   ;;
