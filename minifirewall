@@ -120,8 +120,8 @@ $IPT -N NEEDRESTRICT
 # par defaut rien ne rentre
 $IPT -P INPUT DROP
 
-# par defaut rien ne transite
-$IPT -P FORWARD DROP
+# par defaut rien ne transite (obsolete, notamment pour les VM)
+#$IPT -P FORWARD DROP
 
 # par defaut tout peut sortir (sinon voir OUTPUTDROP)
 $IPT -P OUTPUT ACCEPT
@@ -270,14 +270,15 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     echo "On vide toutes les regles et on accepte tout..."
 
     # On supprime toutes les regles
-    $IPT -F 
+    $IPT -F INPUT
+    $IPT -F OUTPUT
     #$IPT -t nat -F
     $IPT -t mangle -F
 
     # On accepte tout
     $IPT -P INPUT ACCEPT
     $IPT -P OUTPUT ACCEPT
-    $IPT -P FORWARD ACCEPT
+    #$IPT -P FORWARD ACCEPT
     #$IPT -t nat -P PREROUTING ACCEPT
     #$IPT -t nat -P POSTROUTING ACCEPT
 
