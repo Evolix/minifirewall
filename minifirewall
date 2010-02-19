@@ -272,7 +272,13 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     # On supprime toutes les regles
     $IPT -F INPUT
     $IPT -F OUTPUT
-    #$IPT -t nat -F
+    $IPT -F LOG_DROP
+    $IPT -F LOG_ACCEPT
+    $IPT -F ONLYTRUSTED
+    $IPT -F ONLYPRIVILEGIED
+    $IPT -F ICMP_STACK
+    $IPT -F NEEDRESTRICT
+    $IPT -t nat -F
     $IPT -t mangle -F
 
     # On accepte tout
@@ -296,7 +302,7 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
   status)
 
     $IPT -L -n -v --line-numbers
-    #$IPT -t nat -L -n -v --line-numbers
+    $IPT -t nat -L -n -v --line-numbers
     $IPT -t mangle -L -n -v --line-numbers
   ;;
 
@@ -305,7 +311,7 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     echo "On remet les compteurs a zero..."
 
     $IPT -Z
-    #$IPT -t nat -Z
+    $IPT -t nat -Z
     $IPT -t mangle -Z
   ;;
 
