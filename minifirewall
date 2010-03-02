@@ -26,9 +26,6 @@
 # chemin iptables
 IPT=/sbin/iptables
 
-# Configuration
-test -f /etc/firewall.rc && . /etc/firewall.rc
-
 # variables TCP/IP
 LOOPBACK='127.0.0.0/8'
 CLASSA='10.0.0.0/8'
@@ -93,6 +90,7 @@ $IPT -N LOG_ACCEPT
 $IPT -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
 $IPT -A LOG_ACCEPT -j ACCEPT
 
+# Configuration
 test -f /etc/firewall.rc && . /etc/firewall.rc
 
 # trusted ip addresses
