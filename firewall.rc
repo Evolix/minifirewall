@@ -49,7 +49,7 @@ DNSSERVEURS='85.31.205.33 78.153.240.29'
 #     du minifirewall en crontab
 # (Attention, si un proxy HTTP est installe en local
 #  mettre 0.0.0.0/0)
-HTTPSITES='security.debian.org pub.evolix.net volatile.debian.org'
+HTTPSITES='security.debian.org pub.evolix.net volatile.debian.org mirror.evolix.org'
 
 # HTTPS
 # /!\ Possibilite d'utiliser des noms de domaines
