@@ -91,7 +91,21 @@ $IPT -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
 $IPT -A LOG_ACCEPT -j ACCEPT
 
 # Configuration
-test -f /etc/firewall.rc && . /etc/firewall.rc
+configfile="/etc/firewall.rc"
+
+if ! test -f $configfile; then
+	echo "$configfile does not exist" >&2
+	exit 1
+fi
+
+tmpfile=`mktemp`
+. $configfile 2>$tmpfile >&2
+if [ -s $tmpfile ]; then
+	echo "$configfile returns standard or error output (see below). Stopping."
+	cat $tmpfile
+	exit 1
+fi
+rm $tmpfile
 
 # trusted ip addresses
 $IPT -N ONLYTRUSTED
