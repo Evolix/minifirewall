@@ -12,7 +12,7 @@
 
 # Script netfilter/iptables
 # http://netfilter.org/
-# 
+#
 # Designed for Linux kernel 2.4/2.6
 # http://www.kernel.org/
 
@@ -145,9 +145,9 @@ $IPT -A INPUT -i lo -j ACCEPT
 
 # on evite pas mal de paquets "martiens" effet de bord de virus
 # notamment W32/Blaster qui attaquait windowsupdate.com
-# et dont l'enregistrement DNS avait ete change pour 127.0.0.1 
-# $IPT -t NAT -I PREROUTING -s $LOOPBACK -i ! lo -j DROP 
-$IPT -A INPUT -s $LOOPBACK -i ! lo -j DROP 
+# et dont l'enregistrement DNS avait ete change pour 127.0.0.1
+# $IPT -t NAT -I PREROUTING -s $LOOPBACK ! -i lo -j DROP
+$IPT -A INPUT -s $LOOPBACK ! -i lo -j DROP
 
 #################################################################
 # Les services accessibles
@@ -207,7 +207,7 @@ for x in $SERVICESUDP3
 
 # DNS
 # autoriser a recevoir des reponses DNS
-for x in $DNSSERVEURS 
+for x in $DNSSERVEURS
     do
         $IPT -A INPUT -p tcp ! --syn --sport 53 --dport $PORTSUSER -s $x -j ACCEPT
         $IPT -A INPUT -p udp --sport 53 --dport $PORTSUSER -s $x -m state --state ESTABLISHED,RELATED -j ACCEPT
@@ -319,7 +319,7 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
   ;;
 
   reset)
-  
+
     echo "On remet les compteurs a zero..."
 
     $IPT -Z
