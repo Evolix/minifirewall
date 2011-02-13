@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # version 0.2 - 10 aout 2009 : add NEEDRESTRICT chain
 # version 0.1.1 - 13 avril 2009 : firewall.rc is loaded later
@@ -18,6 +18,26 @@
 
 # Description
 # script for local server
+
+# Start or stop a mini-firewall
+#
+
+### BEGIN INIT INFO
+# Provides:          minfirewall
+# Required-Start:
+# Required-Stop:
+# Should-Start:      $network $syslog $named
+# Should-Stop:       $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: start and stop the firewall
+# Description:       Firewall designed by evolix.fr
+### END INIT INFO
+
+DESC="minifirewall"
+NAME="minifirewall"
+
+
 
 ###
 # Configuration des variables
