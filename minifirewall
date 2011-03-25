@@ -166,7 +166,7 @@ $IPT -A INPUT -i lo -j ACCEPT
 # on evite pas mal de paquets "martiens" effet de bord de virus
 # notamment W32/Blaster qui attaquait windowsupdate.com
 # et dont l'enregistrement DNS avait ete change pour 127.0.0.1
-# $IPT -t NAT -I PREROUTING -s $LOOPBACK ! -i lo -j DROP
+# $IPT -t NAT -I PREROUTING -s $LOOPBACK -i ! lo -j DROP
 $IPT -A INPUT -s $LOOPBACK ! -i lo -j DROP
 
 #################################################################
