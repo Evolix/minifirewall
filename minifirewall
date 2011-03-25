@@ -271,6 +271,13 @@ for x in $SMTPOK
         $IPT -A INPUT -p tcp ! --syn --sport 25 --dport $PORTSUSER -j ACCEPT
     done
 
+# SMTP secure
+for x in $SMTP_SECURE_OK
+    do
+        $IPT -A INPUT -p tcp ! --syn --sport 465 --dport $PORTSUSER -j ACCEPT
+        $IPT -A INPUT -p tcp ! --syn --sport 587 --dport $PORTSUSER -j ACCEPT
+    done
+
 # NTP
 # autoriser synchronisation ntpdate
 for x in $NTPOK

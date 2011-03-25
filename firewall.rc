@@ -66,6 +66,9 @@ SSHOK='0.0.0.0/0'
 # SMTP
 SMTPOK='0.0.0.0/0'
 
+# SMTP secure (port 465 et 587)
+SMTPSOK=''
+
 # NTP
 NTPOK='78.153.240.29'
 
