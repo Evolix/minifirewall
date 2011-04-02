@@ -55,7 +55,7 @@ HTTPSITES='security.debian.org pub.evolix.net volatile.debian.org mirror.evolix.
 # /!\ Possibilite d'utiliser des noms de domaines
 #     mais il est conseiller de placer un rechargement
 #     du minifirewall en crontab
-HTTPSSITES=''
+HTTPSSITES='0.0.0.0/0'
 
 # FTP
 FTPSITES=''
