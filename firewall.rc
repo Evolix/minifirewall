@@ -41,7 +41,7 @@ SERVICESUDP3=''
 # DNS
 # (Attention, si un serveur DNS est installe en local
 #  mettre 0.0.0.0/0)
-DNSSERVEURS='85.31.205.33 78.153.240.29'
+DNSSERVEURS='0.0.0.0/0'
 
 # HTTP : security.d.o x3, zidane, modsecurity www.debian.org
 # /!\ Possibilite d'utiliser des noms de domaines
