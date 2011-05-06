@@ -70,7 +70,7 @@ SMTPOK='0.0.0.0/0'
 SMTPSOK=''
 
 # NTP
-NTPOK='78.153.240.29'
+NTPOK='ntp.evolix.net'
 
 
 ################### Specific rules
