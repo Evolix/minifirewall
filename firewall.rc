@@ -67,7 +67,7 @@ SSHOK='0.0.0.0/0'
 SMTPOK='0.0.0.0/0'
 
 # SMTP secure (port 465 et 587)
-SMTPSOK=''
+SMTPSECUREOK=''
 
 # NTP
 NTPOK='ntp.evolix.net'

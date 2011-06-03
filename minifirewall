@@ -271,7 +271,7 @@ for x in $SMTPOK
     done
 
 # SMTP secure
-for x in $SMTP_SECURE_OK
+for x in $SMTPSECUREOK
     do
         $IPT -A INPUT -p tcp ! --syn --sport 465 --dport $PORTSUSER -j ACCEPT
         $IPT -A INPUT -p tcp ! --syn --sport 587 --dport $PORTSUSER -j ACCEPT
