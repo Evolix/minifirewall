@@ -285,14 +285,7 @@ for x in $NTPOK
         done
 
 # ICMP
-$IPT -N ICMP_STACK
-$IPT -A INPUT -p icmp -j ICMP_STACK
-# Gestion des Pings de l'exterieur (on autorise 3 Pings/s)
-$IPT -A ICMP_STACK -p icmp --icmp-type echo-request -m limit --limit 3/s -i $INT -j ACCEPT
-$IPT -A ICMP_STACK -p icmp --icmp-type echo-reply -m limit --limit 3/s -i $INT -j ACCEPT
-$IPT -A ICMP_STACK -p icmp --icmp-type echo-request -i $INT -j DROP
-$IPT -A ICMP_STACK -p icmp --icmp-type echo-reply -i $INT -j DROP
-$IPT -A ICMP_STACK -j ACCEPT
+$IPT -A INPUT -p icmp -j ACCEPT
 
 # 3.Forward
 
@@ -314,7 +307,6 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     $IPT -F LOG_ACCEPT
     $IPT -F ONLYTRUSTED
     $IPT -F ONLYPRIVILEGIED
-    $IPT -F ICMP_STACK
     $IPT -F NEEDRESTRICT
     $IPT -t nat -F
     $IPT -t mangle -F
@@ -331,7 +323,6 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     $IPT -X LOG_ACCEPT
     $IPT -X ONLYPRIVILEGIED
     $IPT -X ONLYTRUSTED
-    $IPT -X ICMP_STACK
     $IPT -X NEEDRESTRICT
 
     echo "OK"
