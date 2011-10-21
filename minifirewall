@@ -44,6 +44,7 @@ NAME="minifirewall"
 
 # chemin iptables
 IPT=/sbin/iptables
+IPT6=/sbin/ip6tables
 
 # variables TCP/IP
 LOOPBACK='127.0.0.0/8'
@@ -150,15 +151,20 @@ $IPT -N NEEDRESTRICT
 
 # par defaut rien ne rentre
 $IPT -P INPUT DROP
+$IPT6 -P INPUT DROP
 
 # par defaut rien ne transite (obsolete, notamment pour les VM)
+#echo 0 > /proc/sys/net/ipv4/ip_forward
 #$IPT -P FORWARD DROP
+#$IPT6 -P FORWARD DROP
 
 # par defaut tout peut sortir (sinon voir OUTPUTDROP)
 $IPT -P OUTPUT ACCEPT
+$IPT6 -P OUTPUT ACCEPT
 
 # On autorise tout sur l'interface loopback
 $IPT -A INPUT -i lo -j ACCEPT
+$IPT6 -A INPUT -i lo -j ACCEPT
 # if OUTPUTDROP
 #$IPT -A OUTPUT -o lo -j ACCEPT
 
@@ -191,11 +197,13 @@ for x in $SERVICESUDP1p
 for x in $SERVICESTCP1
     do
         $IPT -A INPUT -p tcp --dport $x -j ACCEPT
+        $IPT6 -A INPUT -p tcp --dport $x -j ACCEPT
     done
 
 for x in $SERVICESUDP1
     do
         $IPT -A INPUT -p udp --dport $x -j ACCEPT
+        $IPT6 -A INPUT -p udp --dport $x -j ACCEPT
     done
 
 # Services semi-publics
@@ -286,11 +294,8 @@ for x in $NTPOK
 
 # ICMP
 $IPT -A INPUT -p icmp -j ACCEPT
+$IPT6 -A INPUT -p icmpv6 -j ACCEPT
 
-# 3.Forward
-
-# On autorise pas le forward a priori
-echo 0 > /proc/sys/net/ipv4/ip_forward
 
 
     echo "Fin du chargement des regles... "
@@ -310,10 +315,14 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     $IPT -F NEEDRESTRICT
     $IPT -t nat -F
     $IPT -t mangle -F
+    $IPT6 -F INPUT
+    $IPT6 -F OUTPUT
 
     # On accepte tout
     $IPT -P INPUT ACCEPT
     $IPT -P OUTPUT ACCEPT
+    $IPT6 -P INPUT ACCEPT
+    $IPT6 -P OUTPUT ACCEPT
     #$IPT -P FORWARD ACCEPT
     #$IPT -t nat -P PREROUTING ACCEPT
     #$IPT -t nat -P POSTROUTING ACCEPT
@@ -333,6 +342,9 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     $IPT -L -n -v --line-numbers
     $IPT -t nat -L -n -v --line-numbers
     $IPT -t mangle -L -n -v --line-numbers
+    $IPT6 -L -n -v --line-numbers
+    $IPT6 -t nat -L -n -v --line-numbers
+    $IPT6 -t mangle -L -n -v --line-numbers
   ;;
 
   reset)
@@ -342,6 +354,9 @@ echo 0 > /proc/sys/net/ipv4/ip_forward
     $IPT -Z
     $IPT -t nat -Z
     $IPT -t mangle -Z
+    $IPT6 -Z
+    $IPT6 -t nat -Z
+    $IPT6 -t mangle -Z
   ;;
 
   restart)
