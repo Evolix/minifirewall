@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 
 # minifirewall is shellscripts for easy firewalling on a standalone server
 # See http://git.evolix.org/?p=evolinux/minifirewall.git;a=summary
@@ -12,7 +12,7 @@
 # Script netfilter/iptables
 # http://netfilter.org/
 #
-# Designed for Linux kernel 2.4/2.6
+# Designed for Linux kernel 2.6
 # http://www.kernel.org/
 
 # Description
@@ -35,7 +35,6 @@
 
 DESC="minifirewall"
 NAME="minifirewall"
-
 
 
 ###
@@ -63,6 +62,10 @@ case "$1" in
  start)
 
      echo "Demarrage regles IPTables..."
+
+# Stop and warn if error!
+set -e
+trap 'echo "ERROR in minifirewall configuration (fix it now!) or script manipulation (fix yourself)." ' INT TERM EXIT
 
 # 1.Protections diverses
 
@@ -114,16 +117,16 @@ $IPT -A LOG_ACCEPT -j ACCEPT
 configfile="/etc/firewall.rc"
 
 if ! test -f $configfile; then
-	echo "$configfile does not exist" >&2
-	exit 1
+    echo "$configfile does not exist" >&2
+    exit 1
 fi
 
 tmpfile=`mktemp`
 . $configfile 2>$tmpfile >&2
 if [ -s $tmpfile ]; then
-	echo "$configfile returns standard or error output (see below). Stopping."
-	cat $tmpfile
-	exit 1
+        echo "$configfile returns standard or error output (see below). Stopping."
+        cat $tmpfile
+        exit 1
 fi
 rm $tmpfile
 
@@ -146,21 +149,6 @@ for x in $PRIVILEGIEDIPS
 
 # chain for restrictions (blacklist ips/ranges)
 $IPT -N NEEDRESTRICT
-
-# politique
-
-# par defaut rien ne rentre
-$IPT -P INPUT DROP
-$IPT6 -P INPUT DROP
-
-# par defaut rien ne transite (obsolete, notamment pour les VM)
-#echo 0 > /proc/sys/net/ipv4/ip_forward
-#$IPT -P FORWARD DROP
-#$IPT6 -P FORWARD DROP
-
-# par defaut tout peut sortir (sinon voir OUTPUTDROP)
-$IPT -P OUTPUT ACCEPT
-$IPT6 -P OUTPUT ACCEPT
 
 # On autorise tout sur l'interface loopback
 $IPT -A INPUT -i lo -j ACCEPT
@@ -296,7 +284,22 @@ for x in $NTPOK
 $IPT -A INPUT -p icmp -j ACCEPT
 $IPT6 -A INPUT -p icmpv6 -j ACCEPT
 
+# politique
 
+# par defaut rien ne rentre
+$IPT -P INPUT DROP
+$IPT6 -P INPUT DROP
+
+# par defaut rien ne transite (obsolete, notamment pour les VM)
+#echo 0 > /proc/sys/net/ipv4/ip_forward
+#$IPT -P FORWARD DROP
+#$IPT6 -P FORWARD DROP
+
+# par defaut tout peut sortir (sinon voir OUTPUTDROP)
+$IPT -P OUTPUT ACCEPT
+$IPT6 -P OUTPUT ACCEPT
+
+trap - INT TERM EXIT
 
     echo "Fin du chargement des regles... "
   ;;
