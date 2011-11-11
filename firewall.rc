@@ -6,6 +6,8 @@
 # Interface concernee
 INT='eth0'
 
+IPV6=on
+
 # IP associee (plus utilisee dans les scripts)
 # INTIP='192.168.0.2'
 # reseau beneficiant d'acces privilegies
