@@ -74,13 +74,22 @@ SMTPSECUREOK=''
 # NTP
 NTPOK='0.0.0.0/0'
 
+################### IPv6 Specific rules
+# /sbin/ip6tables ...
 
-################### Specific rules
-# /sbin/iptables ....
-# /sbin/iptables ....
-# /sbin/iptables ....
+# allow HTTP/HTTPS traffic
+/sbin/ip6tables -A INPUT -i $INT -p tcp --sport 80 --match state --state ESTABLISHED,RELATED -j ACCEPT
+/sbin/ip6tables -A INPUT -i $INT -p tcp --sport 443 --match state --state ESTABLISHED,RELATED -j ACCEPT
 
-# allow HTTP/HTTPS IPv6 traffic
-/sbin/ip6tables -A INPUT -i eth0 -p tcp --sport 80 --match state --state ESTABLISHED,RELATED -j ACCEPT
-/sbin/ip6tables -A INPUT -i eth0 -p tcp --sport 443 --match state --state ESTABLISHED,RELATED -j ACCEPT
+# Drop outgoing UDP traffic but not for DNS and NTP
+/sbin/ip6tables -A OUTPUT -d ::/0 -p udp --dport 53 -j ACCEPT
+/sbin/ip6tables -A OUTPUT -d ::/0 -p udp --dport 123 -j ACCEPT
+/sbin/ip6tables -A OUTPUT -d ::/0 -p udp -j DROP
 
+################### IPv4 Specific rules
+# /sbin/iptables ...
+
+# Drop outgoing UDP traffic but not for DNS and NTP
+/sbin/iptables -A OUTPUT -d 0.0.0.0/0 -p udp --dport 53 -j ACCEPT
+/sbin/iptables -A OUTPUT -d 0.0.0.0/0 -p udp --dport 123 -j ACCEPT
+/sbin/iptables -A OUTPUT -d 0.0.0.0/0 -p udp -j DROP
