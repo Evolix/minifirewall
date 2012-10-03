@@ -75,7 +75,7 @@ echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
 # Ignorer les mauvais messages d'erreurs ICMP
 echo 1 > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
 
-# effacer la source des paquets routés
+# effacer la source des paquets routes
 for i in /proc/sys/net/ipv4/conf/*/accept_source_route; do
 echo 0 > $i
 done
@@ -295,9 +295,11 @@ $IPT -P INPUT DROP
 #$IPT -P FORWARD DROP
 #$IPT6 -P FORWARD DROP
 
-# par defaut tout peut sortir (sinon voir OUTPUTDROP)
+# par defaut tout peut sortir sauf l'UDP (sinon voir OUTPUTDROP)
 $IPT -P OUTPUT ACCEPT
 [ $IPV6 != 'off' ] && $IPT6 -P OUTPUT ACCEPT
+$IPT -A OUTPUT -p udp -j DROP
+[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -p udp -j DROP
 
 trap - INT TERM EXIT
 
