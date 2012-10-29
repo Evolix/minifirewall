@@ -75,7 +75,7 @@ echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
 # Ignorer les mauvais messages d'erreurs ICMP
 echo 1 > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
 
-# effacer la source des paquets routés
+# effacer la source des paquets routes
 for i in /proc/sys/net/ipv4/conf/*/accept_source_route; do
 echo 0 > $i
 done
@@ -152,9 +152,9 @@ $IPT -N NEEDRESTRICT
 
 # On autorise tout sur l'interface loopback
 $IPT -A INPUT -i lo -j ACCEPT
-$IPT6 -A INPUT -i lo -j ACCEPT
+[ $IPV6 != 'off' ] && $IPT6 -A INPUT -i lo -j ACCEPT
 # if OUTPUTDROP
-#$IPT -A OUTPUT -o lo -j ACCEPT
+$IPT -A OUTPUT -o lo -j ACCEPT
 
 # on evite pas mal de paquets "martiens" effet de bord de virus
 # notamment W32/Blaster qui attaquait windowsupdate.com
@@ -185,13 +185,13 @@ for x in $SERVICESUDP1p
 for x in $SERVICESTCP1
     do
         $IPT -A INPUT -p tcp --dport $x -j ACCEPT
-        $IPT6 -A INPUT -p tcp --dport $x -j ACCEPT
+        [ $IPV6 != 'off' ] && $IPT6 -A INPUT -p tcp --dport $x -j ACCEPT
     done
 
 for x in $SERVICESUDP1
     do
         $IPT -A INPUT -p udp --dport $x -j ACCEPT
-        $IPT6 -A INPUT -p udp --dport $x -j ACCEPT
+        [ $IPV6 != 'off' ] && $IPT6 -A INPUT -p udp --dport $x -j ACCEPT
     done
 
 # Services semi-publics
@@ -282,22 +282,24 @@ for x in $NTPOK
 
 # ICMP
 $IPT -A INPUT -p icmp -j ACCEPT
-$IPT6 -A INPUT -p icmpv6 -j ACCEPT
+[ $IPV6 != 'off' ] && $IPT6 -A INPUT -p icmpv6 -j ACCEPT
 
 # politique
 
 # par defaut rien ne rentre
 $IPT -P INPUT DROP
-$IPT6 -P INPUT DROP
+[ $IPV6 != 'off' ] && $IPT6 -P INPUT DROP
 
 # par defaut rien ne transite (obsolete, notamment pour les VM)
 #echo 0 > /proc/sys/net/ipv4/ip_forward
 #$IPT -P FORWARD DROP
 #$IPT6 -P FORWARD DROP
 
-# par defaut tout peut sortir (sinon voir OUTPUTDROP)
+# par defaut tout peut sortir sauf l'UDP (sinon voir OUTPUTDROP)
 $IPT -P OUTPUT ACCEPT
-$IPT6 -P OUTPUT ACCEPT
+[ $IPV6 != 'off' ] && $IPT6 -P OUTPUT ACCEPT
+$IPT -A OUTPUT -p udp -j DROP
+[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -p udp -j DROP
 
 trap - INT TERM EXIT
 
@@ -346,7 +348,6 @@ trap - INT TERM EXIT
     $IPT -t nat -L -n -v --line-numbers
     $IPT -t mangle -L -n -v --line-numbers
     $IPT6 -L -n -v --line-numbers
-    $IPT6 -t nat -L -n -v --line-numbers
     $IPT6 -t mangle -L -n -v --line-numbers
   ;;
 
@@ -358,7 +359,6 @@ trap - INT TERM EXIT
     $IPT -t nat -Z
     $IPT -t mangle -Z
     $IPT6 -Z
-    $IPT6 -t nat -Z
     $IPT6 -t mangle -Z
   ;;
 
