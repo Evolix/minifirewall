@@ -78,7 +78,8 @@ NTPOK='0.0.0.0/0'
 # /sbin/iptables ....
 # /sbin/iptables ....
 
-# allow HTTP/HTTPS IPv6 traffic
+# allow HTTP/HTTPS/SMTP IPv6 traffic
 /sbin/ip6tables -A INPUT -i eth0 -p tcp --sport 80 --match state --state ESTABLISHED,RELATED -j ACCEPT
 /sbin/ip6tables -A INPUT -i eth0 -p tcp --sport 443 --match state --state ESTABLISHED,RELATED -j ACCEPT
+/sbin/ip6tables -A INPUT -i eth0 -p tcp --sport 25 --match state --state ESTABLISHED,RELATED -j ACCEPT
 
