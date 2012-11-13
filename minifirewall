@@ -298,7 +298,9 @@ $IPT -P INPUT DROP
 # par defaut tout peut sortir sauf l'UDP (sinon voir OUTPUTDROP)
 $IPT -P OUTPUT ACCEPT
 [ $IPV6 != 'off' ] && $IPT6 -P OUTPUT ACCEPT
+$IPT -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
 $IPT -A OUTPUT -p udp -j DROP
+[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
 [ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -p udp -j DROP
 
 trap - INT TERM EXIT
