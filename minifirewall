@@ -155,6 +155,7 @@ $IPT -A INPUT -i lo -j ACCEPT
 [ $IPV6 != 'off' ] && $IPT6 -A INPUT -i lo -j ACCEPT
 # if OUTPUTDROP
 $IPT -A OUTPUT -o lo -j ACCEPT
+[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -o lo -j ACCEPT
 
 # on evite pas mal de paquets "martiens" effet de bord de virus
 # notamment W32/Blaster qui attaquait windowsupdate.com
