@@ -227,6 +227,7 @@ for x in $DNSSERVEURS
     do
         $IPT -A INPUT -p tcp ! --syn --sport 53 --dport $PORTSUSER -s $x -j ACCEPT
         $IPT -A INPUT -p udp --sport 53 --dport $PORTSUSER -s $x -m state --state ESTABLISHED,RELATED -j ACCEPT
+        $IPT -A OUTPUT -o $INT -p udp -d $x --dport 53 --match state --state NEW -j ACCEPT
     done
 
 # HTTP
@@ -278,7 +279,8 @@ for x in $SMTPSECUREOK
 # autoriser synchronisation ntpdate
 for x in $NTPOK
         do
-                $IPT -A INPUT -p udp --sport 123 -s $x -j ACCEPT
+            $IPT -A INPUT -p udp --sport 123 -s $x -j ACCEPT
+            $IPT -A OUTPUT -o $INT -p udp -d $x --dport 123 --match state --state NEW -j ACCEPT
         done
 
 # ICMP
@@ -299,8 +301,10 @@ $IPT -P INPUT DROP
 # par defaut tout peut sortir sauf l'UDP (sinon voir OUTPUTDROP)
 $IPT -P OUTPUT ACCEPT
 [ $IPV6 != 'off' ] && $IPT6 -P OUTPUT ACCEPT
+$IPT -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
 $IPT -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
 $IPT -A OUTPUT -p udp -j DROP
+[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
 [ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
 [ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -p udp -j DROP
 

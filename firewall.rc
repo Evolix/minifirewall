@@ -93,8 +93,3 @@ NTPOK='0.0.0.0/0'
 
 ################### IPv4 Specific rules
 # /sbin/iptables ...
-
-# Allow DNS, NTP and traceroute traffic
-/sbin/iptables -A OUTPUT -o $INT -p udp --dport 53 --match state --state NEW -j ACCEPT
-/sbin/iptables -A OUTPUT -o $INT -p udp --dport 123 --match state --state NEW -j ACCEPT
-/sbin/iptables -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
