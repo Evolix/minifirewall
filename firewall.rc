@@ -86,7 +86,7 @@ NTPOK='0.0.0.0/0'
 # Allow Output DNS, NTP and traceroute traffic
 /sbin/ip6tables -A OUTPUT -o $INT -p udp --dport 53 --match state --state NEW -j ACCEPT
 /sbin/ip6tables -A OUTPUT -o $INT -p udp --dport 123 --match state --state NEW -j ACCEPT
-/sbin/ip6tables -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
+#/sbin/ip6tables -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
 
 # Allow DHCPv6
 /sbin/ip6tables -t filter -A INPUT -i $INT -p udp --dport 546 -d fe80::/64 -j ACCEPT
