@@ -15,7 +15,7 @@ IPV6=on
 INTLAN='192.168.0.2/32'
 
 # trusted ip addresses
-TRUSTEDIPS='62.212.121.90 62.212.111.216 88.179.18.233 85.118.59.4 85.118.59.50 31.170.8.4'
+TRUSTEDIPS='62.212.121.90 62.212.111.216 88.179.18.233 85.118.59.4 85.118.59.50 31.170.8.4 31.170.9.129'
 
 # privilegied ip addresses
 # (trusted ip addresses *are* privilegied)
