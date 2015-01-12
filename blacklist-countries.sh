@@ -6,8 +6,8 @@ cd /var/tmp
 
 rm -f $ripedeny_file
 
-GET http://zidane.evolix.net/spam/ripe.cidr.md5 > ripe.cidr.md5
-GET http://zidane.evolix.net/spam/ripe.cidr > ripe.cidr
+GET http://antispam00.evolix.org/spam/ripe.cidr.md5 > ripe.cidr.md5
+GET http://antispam00.evolix.org/spam/ripe.cidr > ripe.cidr
 
 for i in CN KR RU; do
 
