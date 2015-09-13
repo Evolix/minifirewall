@@ -114,7 +114,13 @@ $IPT -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
 $IPT -A LOG_ACCEPT -j ACCEPT
 
 # Configuration
-configfile="/etc/firewall.rc"
+oldconfigfile="/etc/firewall.rc"
+configfile="/etc/default/minifirewall"
+
+if ! test -f $oldconfigfile; then
+    echo "$oldconfigfile is deprecated, rename to $configfile" >&2
+    exit 1
+fi
 
 if ! test -f $configfile; then
     echo "$configfile does not exist" >&2
@@ -124,7 +130,7 @@ fi
 tmpfile=`mktemp`
 . $configfile 2>$tmpfile >&2
 if [ -s $tmpfile ]; then
-        echo "$configfile returns standard or error output (see below). Stopping."
+        echo "$configfile returns standard or error output (see below). Stopping." >&2
         cat $tmpfile
         exit 1
 fi
