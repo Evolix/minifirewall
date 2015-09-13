@@ -308,12 +308,12 @@ $IPT -A OUTPUT -p udp -j DROP
 
 trap - INT TERM EXIT
 
-    echo "...loading IPTables rules is now finish."
+    echo "...starting IPTables rules is now finish : OK"
   ;;
 
   stop)
 
-    echo "We flush all rules and we accept everything..."
+    echo "Flush all rules and accept everything..."
 
     # Delete all rules
     $IPT -F INPUT
@@ -344,7 +344,7 @@ trap - INT TERM EXIT
     $IPT -X ONLYTRUSTED
     $IPT -X NEEDRESTRICT
 
-    echo "OK"
+    echo "...flushing IPTables rules is now finish : OK"
   ;;
 
   status)
@@ -365,6 +365,8 @@ trap - INT TERM EXIT
     $IPT -t mangle -Z
     $IPT6 -Z
     $IPT6 -t mangle -Z
+
+    echo "...reseting IPTables counters is now finish : OK"
   ;;
 
   restart)
