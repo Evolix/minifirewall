@@ -113,7 +113,7 @@ $IPT -A LOG_ACCEPT -j ACCEPT
 oldconfigfile="/etc/firewall.rc"
 configfile="/etc/default/minifirewall"
 
-if ! test -f $oldconfigfile; then
+if test -f $oldconfigfile; then
     echo "$oldconfigfile is deprecated, rename to $configfile" >&2
     exit 1
 fi
