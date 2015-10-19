@@ -325,14 +325,14 @@ trap - INT TERM EXIT
     $IPT -F NEEDRESTRICT
     $IPT -t nat -F
     $IPT -t mangle -F
-    $IPT6 -F INPUT
-    $IPT6 -F OUTPUT
+    [ $IPV6 != 'off' ] && $IPT6 -F INPUT
+    [ $IPV6 != 'off' ] && $IPT6 -F OUTPUT
 
     # Accept all
     $IPT -P INPUT ACCEPT
     $IPT -P OUTPUT ACCEPT
-    $IPT6 -P INPUT ACCEPT
-    $IPT6 -P OUTPUT ACCEPT
+    [ $IPV6 != 'off' ] && $IPT6 -P INPUT ACCEPT
+    [ $IPV6 != 'off' ] && $IPT6 -P OUTPUT ACCEPT
     #$IPT -P FORWARD ACCEPT
     #$IPT -t nat -P PREROUTING ACCEPT
     #$IPT -t nat -P POSTROUTING ACCEPT
@@ -363,8 +363,8 @@ trap - INT TERM EXIT
     $IPT -Z
     $IPT -t nat -Z
     $IPT -t mangle -Z
-    $IPT6 -Z
-    $IPT6 -t mangle -Z
+    [ $IPV6 != 'off' ] && $IPT6 -Z
+    [ $IPV6 != 'off' ] && $IPT6 -t mangle -Z
 
     echo "...reseting IPTables counters is now finish : OK"
   ;;
