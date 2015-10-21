@@ -154,10 +154,10 @@ $IPT -N NEEDRESTRICT
 
 # We allow all on loopback interface
 $IPT -A INPUT -i lo -j ACCEPT
-[ $IPV6 != 'off' ] && $IPT6 -A INPUT -i lo -j ACCEPT
+[ "$IPV6" != "off" ] && $IPT6 -A INPUT -i lo -j ACCEPT
 # if OUTPUTDROP
 $IPT -A OUTPUT -o lo -j ACCEPT
-[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -o lo -j ACCEPT
+[ "$IPV6" != "off" ] && $IPT6 -A OUTPUT -o lo -j ACCEPT
 
 # We avoid "martians" packets, typical when W32/Blaster virus
 # attacked windowsupdate.com and DNS was changed to 127.0.0.1
@@ -186,13 +186,13 @@ for x in $SERVICESUDP1p
 for x in $SERVICESTCP1
     do
         $IPT -A INPUT -p tcp --dport $x -j ACCEPT
-        [ $IPV6 != 'off' ] && $IPT6 -A INPUT -p tcp --dport $x -j ACCEPT
+        [ "$IPV6" != "off" ] && $IPT6 -A INPUT -p tcp --dport $x -j ACCEPT
     done
 
 for x in $SERVICESUDP1
     do
         $IPT -A INPUT -p udp --dport $x -j ACCEPT
-        [ $IPV6 != 'off' ] && $IPT6 -A INPUT -p udp --dport $x -j ACCEPT
+        [ "$IPV6" != "off" ] && $IPT6 -A INPUT -p udp --dport $x -j ACCEPT
     done
 
 # Privilegied services
@@ -281,7 +281,7 @@ for x in $NTPOK
 
 # Always allow ICMP
 $IPT -A INPUT -p icmp -j ACCEPT
-[ $IPV6 != 'off' ] && $IPT6 -A INPUT -p icmpv6 -j ACCEPT
+[ "$IPV6" != "off" ] && $IPT6 -A INPUT -p icmpv6 -j ACCEPT
 
 
 # IPTables policy
@@ -289,7 +289,7 @@ $IPT -A INPUT -p icmp -j ACCEPT
 
 # by default DROP INPUT packets
 $IPT -P INPUT DROP
-[ $IPV6 != 'off' ] && $IPT6 -P INPUT DROP
+[ "$IPV6" != "off" ] && $IPT6 -P INPUT DROP
 
 # by default, no FORWARING (deprecated for Virtual Machines)
 #echo 0 > /proc/sys/net/ipv4/ip_forward
@@ -298,13 +298,13 @@ $IPT -P INPUT DROP
 
 # by default allow OUTPUT packets... but drop UDP packets (see OUTPUTDROP to drop OUTPUT packets)
 $IPT -P OUTPUT ACCEPT
-[ $IPV6 != 'off' ] && $IPT6 -P OUTPUT ACCEPT
+[ "$IPV6" != "off" ] && $IPT6 -P OUTPUT ACCEPT
 $IPT -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
 $IPT -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
 $IPT -A OUTPUT -p udp -j DROP
-[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
-[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
-[ $IPV6 != 'off' ] && $IPT6 -A OUTPUT -p udp -j DROP
+[ "$IPV6" != "off" ] && $IPT6 -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
+[ "$IPV6" != "off" ] && $IPT6 -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
+[ "$IPV6" != "off" ] && $IPT6 -A OUTPUT -p udp -j DROP
 
 trap - INT TERM EXIT
 
@@ -325,14 +325,14 @@ trap - INT TERM EXIT
     $IPT -F NEEDRESTRICT
     $IPT -t nat -F
     $IPT -t mangle -F
-    [ $IPV6 != 'off' ] && $IPT6 -F INPUT
-    [ $IPV6 != 'off' ] && $IPT6 -F OUTPUT
+    [ "$IPV6" != "off" ] && $IPT6 -F INPUT
+    [ "$IPV6" != "off" ] && $IPT6 -F OUTPUT
 
     # Accept all
     $IPT -P INPUT ACCEPT
     $IPT -P OUTPUT ACCEPT
-    [ $IPV6 != 'off' ] && $IPT6 -P INPUT ACCEPT
-    [ $IPV6 != 'off' ] && $IPT6 -P OUTPUT ACCEPT
+    [ "$IPV6" != "off" ] && $IPT6 -P INPUT ACCEPT
+    [ "$IPV6" != "off" ] && $IPT6 -P OUTPUT ACCEPT
     #$IPT -P FORWARD ACCEPT
     #$IPT -t nat -P PREROUTING ACCEPT
     #$IPT -t nat -P POSTROUTING ACCEPT
@@ -363,8 +363,8 @@ trap - INT TERM EXIT
     $IPT -Z
     $IPT -t nat -Z
     $IPT -t mangle -Z
-    [ $IPV6 != 'off' ] && $IPT6 -Z
-    [ $IPV6 != 'off' ] && $IPT6 -t mangle -Z
+    [ "$IPV6" != "off" ] && $IPT6 -Z
+    [ "$IPV6" != "off" ] && $IPT6 -t mangle -Z
 
     echo "...reseting IPTables counters is now finish : OK"
   ;;
