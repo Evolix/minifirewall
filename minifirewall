@@ -41,6 +41,7 @@ IPT6=/sbin/ip6tables
 
 # TCP/IP variables
 LOOPBACK='127.0.0.0/8'
+LOOPBACK6='::1'
 CLASSA='10.0.0.0/8'
 CLASSB='172.16.0.0/12'
 CLASSC='192.168.0.0/16'
@@ -51,6 +52,47 @@ BROAD='255.255.255.255'
 PORTSROOT='0:1023'
 PORTSUSER='1024:65535'
 
+
+ipxtables() {
+	set +e
+        ip=$1
+        echo "$ip"|grep -q ":"
+        if [ $? -ne 0 ]; then
+                echo $IPT
+        else
+                echo $IPT6
+        fi
+	set -e
+}
+
+ipalltables() {
+	iptables $@
+	ip6tables $@
+}
+
+check_addr() {
+	set +e
+        addr=$1
+	echo $addr|grep -q "/"
+	if [ $? -eq 0 ]; then
+		echo $addr
+	else
+	        host=$(host $addr)
+	        if [ $? -ne 0 ]; then
+	                echo "WARNING: $addr is invalid !" >&2
+	        else
+	                echo "$host"|grep -q "address"
+	                if [ $? -eq 0 ]; then
+	                        echo "$host"|grep -v "mail"|awk '{ print $NF }'|while read ip; do
+	                                echo $ip
+	                        done
+	                else
+	                        echo $addr
+	                fi
+	        fi
+	fi
+	set -e
+}
 
 case "$1" in
  start)
@@ -102,12 +144,12 @@ done
 # IPTables configuration
 ########################
 
-$IPT -N LOG_DROP
-$IPT -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
-$IPT -A LOG_DROP -j DROP
-$IPT -N LOG_ACCEPT
-$IPT -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
-$IPT -A LOG_ACCEPT -j ACCEPT
+ipalltables -N LOG_DROP
+ipalltables -A LOG_DROP -j LOG  #--log-prefix '[IPTABLES DROP] : '
+ipalltables -A LOG_DROP -j DROP
+ipalltables -N LOG_ACCEPT
+ipalltables -A LOG_ACCEPT -j LOG  #--log-prefix '[IPTABLES ACCEPT] : '
+ipalltables -A LOG_ACCEPT -j ACCEPT
 
 # Configuration
 oldconfigfile="/etc/firewall.rc"
@@ -133,36 +175,37 @@ fi
 rm $tmpfile
 
 # Trusted ip addresses
-$IPT -N ONLYTRUSTED
-$IPT -A ONLYTRUSTED -j LOG_DROP
-for x in $TRUSTEDIPS
-    do
-        $IPT -I ONLYTRUSTED -s $x -j ACCEPT
-    done
+ipalltables -N ONLYTRUSTED
+ipalltables -A ONLYTRUSTED -j LOG_DROP
+for addr in $TRUSTEDIPS; do
+        check_addr $addr|while read ip; do
+                $(ipxtables $ip) -I ONLYTRUSTED -s $ip -j ACCEPT
+        done
+done
 
 # Privilegied ip addresses
 # (trusted ip addresses *are* privilegied)
-$IPT -N ONLYPRIVILEGIED
-$IPT -A ONLYPRIVILEGIED -j ONLYTRUSTED
-for x in $PRIVILEGIEDIPS
-    do
-        $IPT -I ONLYPRIVILEGIED -s $x -j ACCEPT
-    done
+ipalltables -N ONLYPRIVILEGIED
+ipalltables -A ONLYPRIVILEGIED -j ONLYTRUSTED
+for addr in $PRIVILEGIEDIPS; do
+        check_addr $addr|while read ip; do
+                $(ipxtables $ip) -I ONLYPRIVILEGIED -s $ip -j ACCEPT
+        done
+done
 
 # Chain for restrictions (blacklist IPs/ranges)
-$IPT -N NEEDRESTRICT
+ipalltables -N NEEDRESTRICT
 
 # We allow all on loopback interface
-$IPT -A INPUT -i lo -j ACCEPT
-[ "$IPV6" != "off" ] && $IPT6 -A INPUT -i lo -j ACCEPT
+ipalltables -A INPUT -i lo -j ACCEPT
 # if OUTPUTDROP
-$IPT -A OUTPUT -o lo -j ACCEPT
-[ "$IPV6" != "off" ] && $IPT6 -A OUTPUT -o lo -j ACCEPT
+ipalltables -A OUTPUT -o lo -j ACCEPT
 
 # We avoid "martians" packets, typical when W32/Blaster virus
 # attacked windowsupdate.com and DNS was changed to 127.0.0.1
-# $IPT -t NAT -I PREROUTING -s $LOOPBACK -i ! lo -j DROP
+# ipalltables -t NAT -I PREROUTING -s $LOOPBACK -i ! lo -j DROP
 $IPT -A INPUT -s $LOOPBACK ! -i lo -j DROP
+$IPT6 -A INPUT -s $LOOPBACK6 ! -i lo -j DROP
 
 
 # Local services restrictions
@@ -174,47 +217,45 @@ $IPT -A INPUT -s $INTLAN -j ACCEPT
 # Enable protection chain for sensible services
 for x in $SERVICESTCP1p
     do
-        $IPT -A INPUT -p tcp --dport $x -j NEEDRESTRICT
+        ipalltables -A INPUT -p tcp --dport $x -j NEEDRESTRICT
     done
 
 for x in $SERVICESUDP1p
     do
-        $IPT -A INPUT -p udp --dport $x -j NEEDRESTRICT
+        ipalltables -A INPUT -p udp --dport $x -j NEEDRESTRICT
     done
 
 # Public service
 for x in $SERVICESTCP1
     do
-        $IPT -A INPUT -p tcp --dport $x -j ACCEPT
-        [ "$IPV6" != "off" ] && $IPT6 -A INPUT -p tcp --dport $x -j ACCEPT
+        ipalltables -A INPUT -p tcp --dport $x -j ACCEPT
     done
 
 for x in $SERVICESUDP1
     do
-        $IPT -A INPUT -p udp --dport $x -j ACCEPT
-        [ "$IPV6" != "off" ] && $IPT6 -A INPUT -p udp --dport $x -j ACCEPT
+        ipalltables -A INPUT -p udp --dport $x -j ACCEPT
     done
 
 # Privilegied services
 for x in $SERVICESTCP2
     do
-        $IPT -A INPUT -p tcp --dport $x -j ONLYPRIVILEGIED
+        ipalltables -A INPUT -p tcp --dport $x -j ONLYPRIVILEGIED
     done
 
 for x in $SERVICESUDP2
     do
-        $IPT -A INPUT -p udp --dport $x -j ONLYPRIVILEGIED
+        ipalltables -A INPUT -p udp --dport $x -j ONLYPRIVILEGIED
     done
 
 # Private services
 for x in $SERVICESTCP3
     do
-        $IPT -A INPUT -p tcp --dport $x -j ONLYTRUSTED
+        ipalltables -A INPUT -p tcp --dport $x -j ONLYTRUSTED
     done
 
 for x in $SERVICESUDP3
     do
-        $IPT -A INPUT -p udp --dport $x -j ONLYTRUSTED
+        ipalltables -A INPUT -p udp --dport $x -j ONLYTRUSTED
     done
 
 
@@ -224,87 +265,89 @@ for x in $SERVICESUDP3
 # DNS authorizations
 for x in $DNSSERVEURS
     do
-        $IPT -A INPUT -p tcp ! --syn --sport 53 --dport $PORTSUSER -s $x -j ACCEPT
-        $IPT -A INPUT -p udp --sport 53 --dport $PORTSUSER -s $x -m state --state ESTABLISHED,RELATED -j ACCEPT
-        $IPT -A OUTPUT -o $INT -p udp -d $x --dport 53 --match state --state NEW -j ACCEPT
+        ipalltables -A INPUT -p tcp ! --syn --sport 53 --dport $PORTSUSER -s $x -j ACCEPT
+        ipalltables -A INPUT -p udp --sport 53 --dport $PORTSUSER -s $x -m state --state ESTABLISHED,RELATED -j ACCEPT
+        ipalltables -A OUTPUT -o $INT -p udp -d $x --dport 53 --match state --state NEW -j ACCEPT
     done
 
 # HTTP (TCP/80) authorizations
-for x in $HTTPSITES
+for addr in $HTTPSITES
     do
-        $IPT -A INPUT -p tcp ! --syn --sport 80 --dport $PORTSUSER -s $x -j ACCEPT
+	check_addr $addr|while read ip; do
+                $(ipxtables $ip) -A INPUT -p tcp ! --syn --sport 80 --dport $PORTSUSER -s $ip -j ACCEPT
+        done
     done
 
 # HTTPS (TCP/443) authorizations
-for x in $HTTPSSITES
+for addr in $HTTPSSITES
     do
-        $IPT -A INPUT -p tcp ! --syn --sport 443 --dport $PORTSUSER -s $x -j ACCEPT
+	check_addr $addr|while read ip; do
+                $(ipxtables $ip) -A INPUT -p tcp ! --syn --sport 443 --dport $PORTSUSER -s $ip -j ACCEPT
+        done
     done
 
 # FTP (so complex protocol...) authorizations
 for x in $FTPSITES
     do
         # requests on Control connection
-        $IPT -A INPUT -p tcp ! --syn --sport 21 --dport $PORTSUSER -s $x -j ACCEPT
+        ipalltables -A INPUT -p tcp ! --syn --sport 21 --dport $PORTSUSER -s $x -j ACCEPT
         # FTP port-mode on Data Connection
-        $IPT -A INPUT -p tcp --sport 20 --dport $PORTSUSER -s $x -j ACCEPT
+        ipalltables -A INPUT -p tcp --sport 20 --dport $PORTSUSER -s $x -j ACCEPT
         # FTP passive-mode on Data Connection
         # WARNING, this allow all connections on TCP ports > 1024
-        $IPT -A INPUT -p tcp ! --syn --sport $PORTSUSER --dport $PORTSUSER -s $x -j ACCEPT
+        ipalltables -A INPUT -p tcp ! --syn --sport $PORTSUSER --dport $PORTSUSER -s $x -j ACCEPT
     done
 
 # SSH authorizations
 for x in $SSHOK
         do
-                $IPT -A INPUT -p tcp ! --syn --sport 22 -s $x -j ACCEPT
+                ipalltables -A INPUT -p tcp ! --syn --sport 22 -s $x -j ACCEPT
         done
 
 # SMTP authorizations
-for x in $SMTPOK
+for addr in $SMTPOK
     do
-        $IPT -A INPUT -p tcp ! --syn --sport 25 --dport $PORTSUSER -s $x -j ACCEPT
+	check_addr $addr|while read ip; do
+                $(ipxtables $ip) -A INPUT -p tcp ! --syn --sport 25 --dport $PORTSUSER -s $ip -j ACCEPT
+        done
     done
 
 # secure SMTP (TCP/465 et TCP/587) authorizations
-for x in $SMTPSECUREOK
+for addr in $SMTPSECUREOK
     do
-        $IPT -A INPUT -p tcp ! --syn --sport 465 --dport $PORTSUSER -s $x -j ACCEPT
-        $IPT -A INPUT -p tcp ! --syn --sport 587 --dport $PORTSUSER -s $x -j ACCEPT
+	check_addr $addr|while read ip; do
+                $(ipxtables $ip) -A INPUT -p tcp ! --syn --sport 465 --dport $PORTSUSER -s $ip -j ACCEPT
+                $(ipxtables $ip) -A INPUT -p tcp ! --syn --sport 587 --dport $PORTSUSER -s $ip -j ACCEPT
+        done
     done
 
 # NTP authorizations
 for x in $NTPOK
         do
-            $IPT -A INPUT -p udp --sport 123 -s $x -j ACCEPT
-            $IPT -A OUTPUT -o $INT -p udp -d $x --dport 123 --match state --state NEW -j ACCEPT
+            ipalltables -A INPUT -p udp --sport 123 -s $x -j ACCEPT
+            ipalltables -A OUTPUT -o $INT -p udp -d $x --dport 123 --match state --state NEW -j ACCEPT
         done
 
 # Always allow ICMP
-$IPT -A INPUT -p icmp -j ACCEPT
-[ "$IPV6" != "off" ] && $IPT6 -A INPUT -p icmpv6 -j ACCEPT
+ipalltables -A INPUT -p icmp -j ACCEPT
 
 
 # IPTables policy
 #################
 
 # by default DROP INPUT packets
-$IPT -P INPUT DROP
-[ "$IPV6" != "off" ] && $IPT6 -P INPUT DROP
+ipalltables -P INPUT DROP
 
 # by default, no FORWARING (deprecated for Virtual Machines)
 #echo 0 > /proc/sys/net/ipv4/ip_forward
-#$IPT -P FORWARD DROP
-#$IPT6 -P FORWARD DROP
+#ipalltables -P FORWARD DROP
+#ipalltables6 -P FORWARD DROP
 
 # by default allow OUTPUT packets... but drop UDP packets (see OUTPUTDROP to drop OUTPUT packets)
-$IPT -P OUTPUT ACCEPT
-[ "$IPV6" != "off" ] && $IPT6 -P OUTPUT ACCEPT
-$IPT -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
-$IPT -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
-$IPT -A OUTPUT -p udp -j DROP
-[ "$IPV6" != "off" ] && $IPT6 -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
-[ "$IPV6" != "off" ] && $IPT6 -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
-[ "$IPV6" != "off" ] && $IPT6 -A OUTPUT -p udp -j DROP
+ipalltables -P OUTPUT ACCEPT
+ipalltables -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
+ipalltables -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
+ipalltables -A OUTPUT -p udp -j DROP
 
 trap - INT TERM EXIT
 
@@ -316,55 +359,47 @@ trap - INT TERM EXIT
     echo "Flush all rules and accept everything..."
 
     # Delete all rules
-    $IPT -F INPUT
-    $IPT -F OUTPUT
-    $IPT -F LOG_DROP
-    $IPT -F LOG_ACCEPT
-    $IPT -F ONLYTRUSTED
-    $IPT -F ONLYPRIVILEGIED
-    $IPT -F NEEDRESTRICT
-    $IPT -t nat -F
-    $IPT -t mangle -F
-    [ "$IPV6" != "off" ] && $IPT6 -F INPUT
-    [ "$IPV6" != "off" ] && $IPT6 -F OUTPUT
+    ipalltables -F INPUT
+    ipalltables -F OUTPUT
+    ipalltables -F LOG_DROP
+    ipalltables -F LOG_ACCEPT
+    ipalltables -F ONLYTRUSTED
+    ipalltables -F ONLYPRIVILEGIED
+    ipalltables -F NEEDRESTRICT
+    ipalltables -t nat -F
+    ipalltables -t mangle -F
 
     # Accept all
-    $IPT -P INPUT ACCEPT
-    $IPT -P OUTPUT ACCEPT
-    [ "$IPV6" != "off" ] && $IPT6 -P INPUT ACCEPT
-    [ "$IPV6" != "off" ] && $IPT6 -P OUTPUT ACCEPT
-    #$IPT -P FORWARD ACCEPT
-    #$IPT -t nat -P PREROUTING ACCEPT
-    #$IPT -t nat -P POSTROUTING ACCEPT
+    ipalltables -P INPUT ACCEPT
+    ipalltables -P OUTPUT ACCEPT
+    #ipalltables -P FORWARD ACCEPT
+    #ipalltables -t nat -P PREROUTING ACCEPT
+    #ipalltables -t nat -P POSTROUTING ACCEPT
 
     # Delete non-standard chains
-    $IPT -X LOG_DROP
-    $IPT -X LOG_ACCEPT
-    $IPT -X ONLYPRIVILEGIED
-    $IPT -X ONLYTRUSTED
-    $IPT -X NEEDRESTRICT
+    ipalltables -X LOG_DROP
+    ipalltables -X LOG_ACCEPT
+    ipalltables -X ONLYPRIVILEGIED
+    ipalltables -X ONLYTRUSTED
+    ipalltables -X NEEDRESTRICT
 
     echo "...flushing IPTables rules is now finish : OK"
   ;;
 
   status)
 
-    $IPT -L -n -v --line-numbers
-    $IPT -t nat -L -n -v --line-numbers
-    $IPT -t mangle -L -n -v --line-numbers
-    $IPT6 -L -n -v --line-numbers
-    $IPT6 -t mangle -L -n -v --line-numbers
+    ipalltables -L -n -v --line-numbers
+    ipalltables -t nat -L -n -v --line-numbers
+    ipalltables -t mangle -L -n -v --line-numbers
   ;;
 
   reset)
 
     echo "Reset all IPTables counters..."
 
-    $IPT -Z
-    $IPT -t nat -Z
-    $IPT -t mangle -Z
-    [ "$IPV6" != "off" ] && $IPT6 -Z
-    [ "$IPV6" != "off" ] && $IPT6 -t mangle -Z
+    ipalltables -Z
+    ipalltables -t nat -Z
+    ipalltables -t mangle -Z
 
     echo "...reseting IPTables counters is now finish : OK"
   ;;
