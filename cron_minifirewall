@@ -4,7 +4,7 @@
 # to refresh ips resolutions
 # Make sure this file is executable !
 
-FIREWALL=/etc/init.d/minifirewall
+FIREWALL=/sbin/minifirewall
 
 if [ -x "$FIREWALL" ] ; then
 	$FIREWALL restart >/dev/null

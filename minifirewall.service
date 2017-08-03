@@ -1,0 +1,12 @@
+[Unit]
+Description=Easy firewalling on a standalone server
+
+[Service]
+Type=oneshot
+Environment="SYSTEMCTL=yes"
+ExecStart=/sbin/minifirewall start
+ExecStop=/sbin/minifirewall stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

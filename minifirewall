@@ -51,9 +51,14 @@ BROAD='255.255.255.255'
 PORTSROOT='0:1023'
 PORTSUSER='1024:65535'
 
+# Detect systemd unit
+[ -f /etc/system/system/minifirewall.service ] && SYSTEMD="true"
+[ -f /lib/systemd/system/minifirewall.service ] && SYSTEMD="true"
 
 case "$1" in
  start)
+
+[ -n "SYSTEMD" ] && [ -z "$SYSTEMCTL" ] && systemctl start minifirewall && exit 0
 
      echo "Start IPTables rules..."
 
@@ -312,6 +317,8 @@ trap - INT TERM EXIT
   ;;
 
   stop)
+
+    [ -n "$SYSTEMD" ] && [ -z "$SYSTEMCTL" ] && systemctl stop minifirewall && exit 0
 
     echo "Flush all rules and accept everything..."
 
