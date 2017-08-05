@@ -1,0 +1,45 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: minifirewall
+Source: <url://example.com>
+#
+# Please double check copyright with the licensecheck(1) command.
+
+Files:     README.md
+           blacklist-countries.sh
+           cron_minifirewall
+           minifirewall.conf
+           ripe.sh
+Copyright: __NO_COPYRIGHT_NOR_LICENSE__
+License:   __NO_COPYRIGHT_NOR_LICENSE__
+
+Files:     minifirewall
+Copyright: 2007-2015 Evolix
+License:   GPL-2.0
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License.
+ .
+ Description
+ script for standalone server
+ .
+ Start or stop minifirewall
+ .
+ BEGIN INIT INFO
+ Provides:          minfirewall
+ Required-Start:
+ Required-Stop:
+ Should-Start:      $network $syslog $named
+ Should-Stop:       $syslog
+ Default-Start:     2 3 4 5
+ Default-Stop:      0 1 6
+ Short-Description: start and stop the firewall
+ Description:       Firewall designed for standalone server
+ END INIT INFO
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ Version 2 can be found in `/usr/share/common-licenses/GPL-2'.
+
+#----------------------------------------------------------------------------
+# Files marked as NO_LICENSE_TEXT_FOUND may be covered by the following
+# license/copyright files.
