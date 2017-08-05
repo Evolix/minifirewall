@@ -7,6 +7,3 @@
 
 %:
 	dh $@
-
-install:
-	install -m 700 -d $(CURDIR)/debian/etc/default
