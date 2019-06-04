@@ -8,7 +8,7 @@ See https://gitea.evolix.org/evolix/minifirewall
 ## Install
 
 ~~~
-install -m 0700 /etc/init.d/minifirewall
+install -m 0700 minifirewall /etc/init.d/minifirewall
 install -m 0600 minifirewall.conf /etc/default/minifirewall
 ~~~
 
