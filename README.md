@@ -37,3 +37,8 @@ If you want to add minifirewall in boot sequence:
 ~~~
 systemctl enable minifirewall
 ~~~
+
+## License
+
+This is an [Evolix](https://evolix.com) project and is licensed
+under the GPLv3, see the [LICENSE](LICENSE) file for details.
