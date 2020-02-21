@@ -51,6 +51,11 @@ BROAD='255.255.255.255'
 PORTSROOT='0:1023'
 PORTSUSER='1024:65535'
 
+# Configuration
+oldconfigfile="/etc/firewall.rc"
+configfile="/etc/default/minifirewall"
+
+IPV6=$(grep "IPV6=" /etc/default/minifirewall | awk -F '=' -F "'" '{print $2}')
 
 case "$1" in
  start)
@@ -109,9 +114,6 @@ $IPT -N LOG_ACCEPT
 $IPT -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
 $IPT -A LOG_ACCEPT -j ACCEPT
 
-# Configuration
-oldconfigfile="/etc/firewall.rc"
-configfile="/etc/default/minifirewall"
 
 if test -f $oldconfigfile; then
     echo "$oldconfigfile is deprecated, rename to $configfile" >&2
