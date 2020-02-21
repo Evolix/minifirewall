@@ -51,11 +51,20 @@ BROAD='255.255.255.255'
 PORTSROOT='0:1023'
 PORTSUSER='1024:65535'
 
+chain_exists()
+{
+    local chain_name="$1" ; shift
+    [ $# -eq 1 ] && local intable="--table $1"
+    iptables $intable -nL "$chain_name" >/dev/null 2>&1
+}
+
 # Configuration
 oldconfigfile="/etc/firewall.rc"
 configfile="/etc/default/minifirewall"
 
 IPV6=$(grep "IPV6=" /etc/default/minifirewall | awk -F '=' -F "'" '{print $2}')
+DOCKER=$(grep "DOCKER=" /etc/default/minifirewall | awk -F '='  -F "'" '{print $2}')
+INT=$(grep "INT=" /etc/default/minifirewall | awk -F '='  -F "'" '{print $2}')
 
 case "$1" in
  start)
@@ -114,6 +123,18 @@ $IPT -N LOG_ACCEPT
 $IPT -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
 $IPT -A LOG_ACCEPT -j ACCEPT
 
+if [ "$DOCKER" != "off" ]; then
+
+    if chain_exists 'DOCKER-USER'; then
+        $IPT -F DOCKER-USER
+    else
+        $IPT -N DOCKER-USER
+    fi;
+
+    iptables -A DOCKER-USER -i $INT -m state  --state NEW -j DROP
+    iptables -A DOCKER-USER -j RETURN
+
+fi
 
 if test -f $oldconfigfile; then
     echo "$oldconfigfile is deprecated, rename to $configfile" >&2
@@ -219,6 +240,16 @@ for x in $SERVICESUDP3
         $IPT -A INPUT -p udp --dport $x -j ONLYTRUSTED
     done
 
+# Docker services (IPv4)
+for x in $SERVICESTCP4
+    do
+        $IPT -I DOCKER-USER -p tcp --dport $x -j RETURN
+    done
+
+for x in $SERVICESUDP4
+    do
+        $IPT -I DOCKER-USER -p udp --dport $x -j RETURN
+    done
 
 # External services
 ###################
@@ -325,10 +356,15 @@ trap - INT TERM EXIT
     $IPT -F ONLYTRUSTED
     $IPT -F ONLYPRIVILEGIED
     $IPT -F NEEDRESTRICT
-    $IPT -t nat -F
+    [ "$DOCKER" != "on" ] && $IPT -t nat -F
     $IPT -t mangle -F
     [ "$IPV6" != "off" ] && $IPT6 -F INPUT
     [ "$IPV6" != "off" ] && $IPT6 -F OUTPUT
+
+    if [ "$DOCKER" != "off" ]; then
+        $IPT -F DOCKER-USER
+        $IPT -A DOCKER-USER -j RETURN
+    fi
 
     # Accept all
     $IPT -P INPUT ACCEPT
@@ -384,4 +420,3 @@ trap - INT TERM EXIT
 esac
 
 exit 0
-
