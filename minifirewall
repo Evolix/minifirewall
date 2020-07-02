@@ -123,19 +123,6 @@ $IPT -N LOG_ACCEPT
 $IPT -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
 $IPT -A LOG_ACCEPT -j ACCEPT
 
-if [ "$DOCKER" != "off" ]; then
-
-    if chain_exists 'DOCKER-USER'; then
-        $IPT -F DOCKER-USER
-    else
-        $IPT -N DOCKER-USER
-    fi;
-
-    iptables -A DOCKER-USER -i $INT -m state  --state NEW -j DROP
-    iptables -A DOCKER-USER -j RETURN
-
-fi
-
 if test -f $oldconfigfile; then
     echo "$oldconfigfile is deprecated, rename to $configfile" >&2
     exit 1
@@ -186,6 +173,33 @@ $IPT -A OUTPUT -o lo -j ACCEPT
 # attacked windowsupdate.com and DNS was changed to 127.0.0.1
 # $IPT -t NAT -I PREROUTING -s $LOOPBACK -i ! lo -j DROP
 $IPT -A INPUT -s $LOOPBACK ! -i lo -j DROP
+
+
+if [ "$DOCKER" = "on" ]; then
+
+    $IPT -N MINIFW-DOCKER-TRUSTED
+    $IPT -A MINIFW-DOCKER-TRUSTED -j DROP
+
+    $IPT -N MINIFW-DOCKER-PRIVILEGED
+    $IPT -A MINIFW-DOCKER-PRIVILEGED -j MINIFW-DOCKER-TRUSTED
+    $IPT -A MINIFW-DOCKER-PRIVILEGED -j RETURN
+
+    $IPT -N MINIFW-DOCKER-PUB
+    $IPT -A MINIFW-DOCKER-PUB -j MINIFW-DOCKER-PRIVILEGED
+    $IPT -A MINIFW-DOCKER-PUB -j RETURN
+
+    # Flush DOCKER-USER if exist, create it if absent
+    if chain_exists 'DOCKER-USER'; then
+        $IPT -F DOCKER-USER
+    else
+        $IPT -N DOCKER-USER
+    fi;
+
+    # Pipe new connection through MINIFW-DOCKER-PUB
+    $IPT -A DOCKER-USER -i $INT -m state  --state NEW -j MINIFW-DOCKER-PUB
+    $IPT -A DOCKER-USER -j RETURN
+
+fi
 
 
 # Local services restrictions
@@ -240,16 +254,64 @@ for x in $SERVICESUDP3
         $IPT -A INPUT -p udp --dport $x -j ONLYTRUSTED
     done
 
-# Docker services (IPv4)
-for x in $SERVICESTCP4
-    do
-        $IPT -I DOCKER-USER -p tcp --dport $x -j RETURN
-    done
 
-for x in $SERVICESUDP4
-    do
-        $IPT -I DOCKER-USER -p udp --dport $x -j RETURN
-    done
+if [ "$DOCKER" = "on" ]; then
+
+    # Public services defined in SERVICESTCP1 & SERVICESUDP1
+    for dstport in $SERVICESTCP1
+        do
+            $IPT -I MINIFW-DOCKER-PUB -p tcp --dport "$dstport" -j RETURN
+        done
+
+    for dstport in $SERVICESUDP1
+        do
+            $IPT -I MINIFW-DOCKER-PUB -p udp --dport "$dstport" -j RETURN
+        done
+
+    # Privileged services (accessible from privileged & trusted IPs)
+    for dstport in $SERVICESTCP2
+        do
+            for srcip in $PRIVILEGIEDIPS
+                do
+                    $IPT -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "$srcip" --dport "$dstport" -j RETURN
+                done
+
+            for srcip in $TRUSTEDIPS
+                do
+                    $IPT -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "$srcip" --dport "$dstport" -j RETURN
+                done
+        done
+
+    for dstport in $SERVICESUDP2
+        do
+            for srcip in $PRIVILEGIEDIPS
+                do
+                    $IPT -I MINIFW-DOCKER-PRIVILEGED -p udp -s "$srcip" --dport "$dstport" -j RETURN
+                done
+
+            for srcip in $TRUSTEDIPS
+                do
+                    $IPT -I MINIFW-DOCKER-PRIVILEGED -p udp -s "$srcip" --dport "$dstport" -j RETURN
+                done
+        done
+
+    # Trusted services (accessible from trusted IPs)
+    for dstport in $SERVICESTCP3
+        do
+            for srcip in $TRUSTEDIPS
+                do
+                    $IPT -I MINIFW-DOCKER-TRUSTED -p tcp -s "$srcip" --dport "$dstport" -j RETURN
+                done
+        done
+
+    for dstport in $SERVICESUDP3
+        do
+            for srcip in $TRUSTEDIPS
+                do
+                    $IPT -I MINIFW-DOCKER-TRUSTED -p udp -s "$srcip" --dport "$dstport" -j RETURN
+                done
+        done
+fi
 
 # External services
 ###################
@@ -356,14 +418,22 @@ trap - INT TERM EXIT
     $IPT -F ONLYTRUSTED
     $IPT -F ONLYPRIVILEGIED
     $IPT -F NEEDRESTRICT
-    [ "$DOCKER" != "on" ] && $IPT -t nat -F
+    [ "$DOCKER" = "off" ] && $IPT -t nat -F
     $IPT -t mangle -F
     [ "$IPV6" != "off" ] && $IPT6 -F INPUT
     [ "$IPV6" != "off" ] && $IPT6 -F OUTPUT
 
-    if [ "$DOCKER" != "off" ]; then
+    if [ "$DOCKER" = "on" ]; then
         $IPT -F DOCKER-USER
         $IPT -A DOCKER-USER -j RETURN
+
+        $IPT -F MINIFW-DOCKER-PUB
+        $IPT -X MINIFW-DOCKER-PUB
+        $IPT -F MINIFW-DOCKER-PRIVILEGED
+        $IPT -X MINIFW-DOCKER-PRIVILEGED
+        $IPT -F MINIFW-DOCKER-TRUSTED
+        $IPT -X MINIFW-DOCKER-TRUSTED
+
     fi
 
     # Accept all
