@@ -38,6 +38,44 @@ If you want to add minifirewall in boot sequence:
 systemctl enable minifirewall
 ~~~
 
+## Ban a whole AS
+
+### Automatic way using an API
+
+Set the AS number you want to ban in BANNEDASNS.
+
+### Manual way
+
+The manual way is here only for reference.
+
+First find the AS for one IP address.
+~~~
+$ whois IP | grep origin:
+Or if no result, use a specific whois server
+$ whois -h whois.radb.net IP | grep origin:
+Or if no result, use a specific whois server
+$ whois -h whois.cymru.com IP
+~~~
+
+Then, get the routes of this AS.
+~~~
+$ whois -i origin ASNUMBER | grep route:
+Or if no result, use a specific whois server
+$ whois -h whois.radb.net -i origin ASNUMBER | grep route:
+Or if no result, use a specific API
+$ curl -qs https://asn.ipinfo.app/api/text/list/ASNUMBER
+~~~
+
+Finally, add a kernel set and DROP the set.
+
+~~~
+# ipset -N ASNUMBER hash:net family inet
+# ipset -A ASNUMBER 192.0.2.0/24
+# ipset -A ASNUMBER 198.51.100.0/24
+# iptables -A INPUT -m set --match-set ASNUMBER src -j DROP
+~~~
+
+
 ## License
 
 This is an [Evolix](https://evolix.com) project and is licensed

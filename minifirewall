@@ -38,6 +38,7 @@ NAME="minifirewall"
 # iptables paths
 IPT=/sbin/iptables
 IPT6=/sbin/ip6tables
+IPSET=/sbin/ipset
 
 # TCP/IP variables
 LOOPBACK='127.0.0.0/8'
@@ -56,6 +57,8 @@ oldconfigfile="/etc/firewall.rc"
 configfile="/etc/default/minifirewall"
 
 IPV6=$(grep "IPV6=" /etc/default/minifirewall | awk -F '=' -F "'" '{print $2}')
+
+WHOISSERVER="whois.radb.net"
 
 case "$1" in
  start)
@@ -104,15 +107,25 @@ for i in /proc/sys/net/ipv4/conf/*/log_martians; do
 echo 1 > $i
 done
 
+# ipset init for banned IP addresses
+$IPSET -N BANNED-IP4 hash:net family inet
+$IPSET -N BANNED-IP6 hash:net family inet6
+
 # IPTables configuration
 ########################
 
 $IPT -N LOG_DROP
 $IPT -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
 $IPT -A LOG_DROP -j DROP
+$IPT6 -N LOG_DROP
+$IPT6 -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
+$IPT6 -A LOG_DROP -j DROP
 $IPT -N LOG_ACCEPT
 $IPT -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
 $IPT -A LOG_ACCEPT -j ACCEPT
+$IPT6 -N LOG_ACCEPT
+$IPT6 -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
+$IPT6 -A LOG_ACCEPT -j ACCEPT
 
 
 if test -f $oldconfigfile; then
@@ -133,6 +146,16 @@ if [ -s $tmpfile ]; then
         exit 1
 fi
 rm $tmpfile
+
+# Banned IP addresses
+$IPT -I INPUT -m set --match-set BANNED-IP4 src -j LOG_DROP
+$IPT6 -I INPUT -m set --match-set BANNED-IP6 src -j LOG_DROP
+# We reject with icmp-admin-prohibited to help sysadmins understand
+# that the IP address is banned if maybe they forgot banning it
+$IPT -I OUTPUT -m set --match-set BANNED-IP4 dst -j REJECT \
+    --reject-with icmp-admin-prohibited
+$IPT6 -I OUTPUT -m set --match-set BANNED-IP6 dst -j REJECT \
+    --reject-with icmp6-adm-prohibited
 
 # Trusted ip addresses
 $IPT -N ONLYTRUSTED
@@ -165,7 +188,6 @@ $IPT -A OUTPUT -o lo -j ACCEPT
 # attacked windowsupdate.com and DNS was changed to 127.0.0.1
 # $IPT -t NAT -I PREROUTING -s $LOOPBACK -i ! lo -j DROP
 $IPT -A INPUT -s $LOOPBACK ! -i lo -j DROP
-
 
 # Local services restrictions
 #############################
@@ -281,6 +303,50 @@ for x in $NTPOK
             $IPT -A OUTPUT -o $INT -p udp -d $x --dport 123 --match state --state NEW -j ACCEPT
         done
 
+# WHOIS authorizations
+for x in $WHOISOK
+        do
+            $IPT -A INPUT -p udp --sport 43 -s $x -j ACCEPT
+            $IPT -A OUTPUT -o $INT -p udp -d $x --dport 43 --match state --state NEW -j ACCEPT
+            $IPT -A INPUT -p tcp ! --syn --sport 43 -s $x -j ACCEPT
+        done
+
+# IP addresses banned
+for x in $BANNEDIPS
+        do
+            $IPSET -exist -A BANNED-IP4 $x
+        done
+
+# IPv6 addresses banned
+for x in $BANNEDIPS6
+        do
+            $IPSET -exist -A BANNED-IP6 $x
+        done
+
+# AS numbers banned
+for x in $BANNEDASNS
+        do
+            # Init the set
+            $IPSET -N BANNED-AS4-${x} hash:net family inet
+            $IPSET -N BANNED-AS6-${x} hash:net family inet6
+            # Get the route information of the ASN
+            ASN4LIST=$(whois -h $WHOISSERVER -i origin $x | grep route: | awk '{print $2}')
+            for ASN4 in $ASN4LIST
+                do
+                    $IPSET -exist -A BANNED-AS4-${x} $ASN4
+                done
+            ASN6LIST=$(whois -h $WHOISSERVER -i origin $x | grep route6: | awk '{print $2}')
+            for ASN6 in $ASN6LIST
+                do
+                    $IPSET -exist -A BANNED-AS6-${x} $ASN6
+                done
+            # Ban the set
+            $IPT -I INPUT -m set --match-set BANNED-AS4-${x} src -j LOG_DROP
+            $IPT -I OUTPUT -m set --match-set BANNED-AS4-${x} dst -j REJECT --reject-with icmp-admin-prohibited
+            $IPT6 -I INPUT -m set --match-set BANNED-AS6-${x} src -j LOG_DROP
+            $IPT6 -I OUTPUT -m set --match-set BANNED-AS6-${x} dst -j REJECT --reject-with icmp6-adm-prohibited
+        done
+
 # Always allow ICMP
 $IPT -A INPUT -p icmp -j ACCEPT
 [ "$IPV6" != "off" ] && $IPT6 -A INPUT -p icmpv6 -j ACCEPT
@@ -322,6 +388,8 @@ trap - INT TERM EXIT
     $IPT -F OUTPUT
     $IPT -F LOG_DROP
     $IPT -F LOG_ACCEPT
+    $IPT6 -F LOG_DROP
+    $IPT6 -F LOG_ACCEPT
     $IPT -F ONLYTRUSTED
     $IPT -F ONLYPRIVILEGIED
     $IPT -F NEEDRESTRICT
@@ -342,9 +410,14 @@ trap - INT TERM EXIT
     # Delete non-standard chains
     $IPT -X LOG_DROP
     $IPT -X LOG_ACCEPT
+    $IPT6 -X LOG_DROP
+    $IPT6 -X LOG_ACCEPT
     $IPT -X ONLYPRIVILEGIED
     $IPT -X ONLYTRUSTED
     $IPT -X NEEDRESTRICT
+
+    # Destroy all ipset
+    $IPSET destroy
 
     echo "...flushing IPTables rules is now finish : OK"
   ;;
