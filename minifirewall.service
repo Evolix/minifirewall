@@ -1,0 +1,14 @@
+[Unit]
+Description=minifirewall
+Documentation=https://gitea.evolix.org/evolix/minifirewall
+After=default.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/minifirewall-start.sh
+RemainAfterExit=yes
+ExecStop=/usr/sbin/minifirewall-stop.sh
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target 
