@@ -295,68 +295,87 @@ for x in $SERVICESUDP1p
 #
 ## External services
 ####################
-#
+
+# Add set with $DNSSERVERS elements
+$NFT add set inet minifirewall minifirewall_dnsservers { type ipv4_addr\;}
+if [ ! -z $DNSSERVEURS ]
+then
+    $NFT add element inet minifirewall minifirewall_dnsservers {$(echo $DNSSERVEURS | sed 's/ /, /g')}
+fi
+
+# Add set with $HTTPSITES elements
+$NFT add set inet minifirewall minifirewall_httpsites { type ipv4_addr\;}
+if [ ! -z $HTTPSITES ]
+then
+    $NFT add element inet minifirewall minifirewall_httpsites {$(echo $HTTPSITES | sed 's/ /, /g')}
+fi
+
+# Add set with $HTTPSSITES elements
+$NFT add set inet minifirewall minifirewall_httpssites { type ipv4_addr\;}
+if [ ! -z $HTTPSSITES ]
+then
+    $NFT add element inet minifirewall minifirewall_httpssites {$(echo $HTTPSSITES | sed 's/ /, /g')}
+fi
+
+# Add set with $FTPSITES elements
+$NFT add set inet minifirewall minifirewall_ftpsites { type ipv4_addr\;}
+if [ ! -z $FTPSITES ]
+then
+    $NFT add element inet minifirewall minifirewall_ftpsites {$(echo $FTPSITES | sed 's/ /, /g')}
+fi
+
+# Add set with $SSHOK elements
+$NFT add set inet minifirewall minifirewall_sshok { type ipv4_addr\;}
+if [ ! -z $SSHOK ]
+then
+    $NFT add element inet minifirewall minifirewall_sshok {$(echo $SSHOK | sed 's/ /, /g')}
+fi
+
+# Add set with $SMTPOK elements
+$NFT add set inet minifirewall minifirewall_smtpok { type ipv4_addr\;}
+if [ ! -z $SMTPOK ]
+then
+    $NFT add element inet minifirewall minifirewall_smtpok {$(echo $SMTPOK | sed 's/ /, /g')}
+fi
+
+# Add set with $SMTPSECUREOK elements
+$NFT add set inet minifirewall minifirewall_smtpsecureok { type ipv4_addr\;}
+if [ ! -z $SMTPSECUREOK ]
+then
+    $NFT add element inet minifirewall minifirewall_smtpsecureok {$(echo $SMTPSECUREOK | sed 's/ /, /g')}
+fi
+
+# Add set with $NTPOK elements
+$NFT add set inet minifirewall minifirewall_ntpok { type ipv4_addr\;}
+if [ ! -z $NTPOK ]
+then
+    $NFT add element inet minifirewall minifirewall_ntpok {$(echo $NTPOK | sed 's/ /, /g')}
+fi
+
 ## DNS authorizations
-#for x in $DNSSERVEURS
-#    do
-#        $NFT -A INPUT -p tcp ! --syn --sport 53 --dport $PORTSUSER -s $x -j ACCEPT
-#        $NFT -A INPUT -p udp --sport 53 --dport $PORTSUSER -s $x -m state --state ESTABLISHED,RELATED -j ACCEPT
-#        $NFT -A OUTPUT -o $INT -p udp -d $x --dport 53 --match state --state NEW -j ACCEPT
-#    done
-#
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_dnsservers udp dport 53 counter accept
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_dnsservers tcp dport 53 counter accept
+
 ## HTTP (TCP/80) authorizations
-#for x in $HTTPSITES
-#    do
-#        $NFT -A INPUT -p tcp ! --syn --sport 80 --dport $PORTSUSER -s $x -j ACCEPT
-#    done
-#
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_httpsites tcp dport 80 counter accept
+
 ## HTTPS (TCP/443) authorizations
-#for x in $HTTPSSITES
-#    do
-#        $NFT -A INPUT -p tcp ! --syn --sport 443 --dport $PORTSUSER -s $x -j ACCEPT
-#    done
-#
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_httpssites tcp dport 443 counter accept
+
 ## FTP (so complex protocol...) authorizations
-#for x in $FTPSITES
-#    do
-#        # requests on Control connection
-#        $NFT -A INPUT -p tcp ! --syn --sport 21 --dport $PORTSUSER -s $x -j ACCEPT
-#        # FTP port-mode on Data Connection
-#        $NFT -A INPUT -p tcp --sport 20 --dport $PORTSUSER -s $x -j ACCEPT
-#        # FTP passive-mode on Data Connection
-#        # WARNING, this allow all connections on TCP ports > 1024
-#        $NFT -A INPUT -p tcp ! --syn --sport $PORTSUSER --dport $PORTSUSER -s $x -j ACCEPT
-#    done
-#
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_ftpsites tcp dport {20, 21, 1024-65535} counter accept
+
 ## SSH authorizations
-#for x in $SSHOK
-#        do
-#                $NFT -A INPUT -p tcp ! --syn --sport 22 -s $x -j ACCEPT
-#        done
-#
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_sshok tcp dport 22 counter accept
+
 ## SMTP authorizations
-#for x in $SMTPOK
-#    do
-#        $NFT -A INPUT -p tcp ! --syn --sport 25 --dport $PORTSUSER -s $x -j ACCEPT
-#    done
-#
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_smtpok tcp dport 25 counter accept
+
 ## secure SMTP (TCP/465 et TCP/587) authorizations
-#for x in $SMTPSECUREOK
-#    do
-#        $NFT -A INPUT -p tcp ! --syn --sport 465 --dport $PORTSUSER -s $x -j ACCEPT
-#        $NFT -A INPUT -p tcp ! --syn --sport 587 --dport $PORTSUSER -s $x -j ACCEPT
-#    done
-#
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_smtpsecureok tcp dport {465, 587} counter accept
+
 ## NTP authorizations
-#for x in $NTPOK
-#        do
-#            $NFT -A INPUT -p udp --sport 123 -s $x -j ACCEPT
-#            $NFT -A OUTPUT -o $INT -p udp -d $x --dport 123 --match state --state NEW -j ACCEPT
-#        done
-#
-## Always allow ICMP
-#$NFT -A INPUT -p icmp -j ACCEPT
-#[ "$IPV6" != "off" ] && $NFT6 -A INPUT -p icmpv6 -j ACCEPT
+$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_ntpok tcp dport 123 counter accept
 
 trap - INT TERM EXIT
 
