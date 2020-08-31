@@ -300,85 +300,131 @@ for x in $SERVICESUDP1p
 $NFT add set inet minifirewall minifirewall_dnsservers { type ipv4_addr\;}
 if [ ! -z $DNSSERVEURS ]
 then
-    $NFT add element inet minifirewall minifirewall_dnsservers {$(echo $DNSSERVEURS | sed 's/ /, /g')}
+    if echo $DNSSERVEURS | grep -q "0.0.0.0/0"
+    then
+       # If 0.0.0.0/0 is present we allow any output on TCP/UDP port 53
+       $NFT add rule inet minifirewall minifirewall_output udp dport 53 counter accept
+       $NFT add rule inet minifirewall minifirewall_output tcp dport 53 counter accept
+    else
+       # Else we add each element to the minifirewall_dnsservers set and allow this set to be reached on TCP/UDP port 53
+       $NFT add element inet minifirewall minifirewall_dnsservers {$(echo $DNSSERVEURS | sed 's/ /, /g')}
+       $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_dnsservers udp dport 53 counter accept
+       $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_dnsservers tcp dport 53 counter accept
+    fi
 fi
 
 # Add set with $HTTPSITES elements
 $NFT add set inet minifirewall minifirewall_httpsites { type ipv4_addr\;}
 if [ ! -z $HTTPSITES ]
 then
-    $NFT add element inet minifirewall minifirewall_httpsites {$(echo $HTTPSITES | sed 's/ /, /g')}
+    if echo $HTTPSITES | grep -q "0.0.0.0/0"
+    then
+        # If 0.0.0.0/0 is present we allow any output on TCP port 80
+        $NFT add rule inet minifirewall minifirewall_output tcp dport 80 counter accept
+    else
+        # Else we add each element to the minifirewall_httpsites set and allow this set to be reach on TCP port 80
+        $NFT add element inet minifirewall minifirewall_httpsites {$(echo $HTTPSITES | sed 's/ /, /g')}
+        $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_httpsites tcp dport 80 counter accept
+    fi
 fi
 
 # Add set with $HTTPSSITES elements
 $NFT add set inet minifirewall minifirewall_httpssites { type ipv4_addr\;}
 if [ ! -z $HTTPSSITES ]
 then
-    $NFT add element inet minifirewall minifirewall_httpssites {$(echo $HTTPSSITES | sed 's/ /, /g')}
+    if echo $HTTPSSITES | grep -q "0.0.0.0/0"
+    then
+        # If 0.0.0.0/0 is present we allow any output on TCP port 443
+        $NFT add rule inet minifirewall minifirewall_output tcp dport 443 counter accept
+    else
+        # Else we add each element to the minifirewall_httpssites set and allow this set to be reach on TCP port 443
+        $NFT add element inet minifirewall minifirewall_httpssites {$(echo $HTTPSSITES | sed 's/ /, /g')}
+        $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_httpssites tcp dport 443 counter accept
+    fi
 fi
 
 # Add set with $FTPSITES elements
 $NFT add set inet minifirewall minifirewall_ftpsites { type ipv4_addr\;}
 if [ ! -z $FTPSITES ]
 then
-    $NFT add element inet minifirewall minifirewall_ftpsites {$(echo $FTPSITES | sed 's/ /, /g')}
+    if echo $FTPSITES | grep -q "0.0.0.0/0"
+    then
+        # If 0.0.0.0/0 is present we allow any output on TCP ports 20, 21, 1024-65535
+        $NFT add rule inet minifirewall minifirewall_output tcp dport {20, 21, 1024-65535} counter accept
+    else
+        # Else we add each element to the minifirewall_ftpsites set and allow this set to be reach on TCP ports 20, 21, 1024-65535
+        $NFT add element inet minifirewall minifirewall_ftpsites {$(echo $FTPSITES | sed 's/ /, /g')}
+        $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_ftpsites tcp dport {20, 21, 1024-65535} counter accept
+    fi
 fi
 
 # Add set with $SSHOK elements
 $NFT add set inet minifirewall minifirewall_sshok { type ipv4_addr\;}
 if [ ! -z $SSHOK ]
 then
-    $NFT add element inet minifirewall minifirewall_sshok {$(echo $SSHOK | sed 's/ /, /g')}
+    if echo $SSHOK | grep -q "0.0.0.0/0"
+    then
+        # If 0.0.0.0/0 is present we allow any output on TCP port 22
+        $NFT add rule inet minifirewall minifirewall_output tcp dport 22 counter accept
+    else
+        # Else we add each element to the minifirewall_sshok set and allow this set to be reach on TCP port 22
+        $NFT add element inet minifirewall minifirewall_sshok {$(echo $SSHOK | sed 's/ /, /g')}
+        $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_sshok tcp dport 22 counter accept
+    fi
 fi
 
 # Add set with $SMTPOK elements
 $NFT add set inet minifirewall minifirewall_smtpok { type ipv4_addr\;}
 if [ ! -z $SMTPOK ]
 then
-    $NFT add element inet minifirewall minifirewall_smtpok {$(echo $SMTPOK | sed 's/ /, /g')}
+    if echo $SMTPOK | grep -q "0.0.0.0/0"
+    then
+        # If 0.0.0.0/0 is present we allow any output on TCP port 25
+        $NFT add rule inet minifirewall minifirewall_output tcp dport 25 counter accept
+    else
+        # Else we add each element to the minifirewall_smtpok set and allow this set to be reach on TCP port 25
+        $NFT add element inet minifirewall minifirewall_smtpok {$(echo $SMTPOK | sed 's/ /, /g')}
+        $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_smtpok tcp dport 25 counter accept
+    fi
 fi
 
 # Add set with $SMTPSECUREOK elements
 $NFT add set inet minifirewall minifirewall_smtpsecureok { type ipv4_addr\;}
 if [ ! -z $SMTPSECUREOK ]
 then
-    $NFT add element inet minifirewall minifirewall_smtpsecureok {$(echo $SMTPSECUREOK | sed 's/ /, /g')}
+    if echo $SMTPSECUREOK | grep -q "0.0.0.0/0"
+    then
+        # If 0.0.0.0/0 is present we allow any output on TCP ports 465 and 587
+        $NFT add rule inet minifirewall minifirewall_output tcp dport {465, 587} counter accept
+    else
+        # Else we add each element to the minifirewall_smtpsecureok set and allow this set to be reach on TCP ports 465 and 587
+        $NFT add element inet minifirewall minifirewall_smtpsecureok {$(echo $SMTPSECUREOK | sed 's/ /, /g')}
+        $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_smtpsecureok tcp dport {465, 587} counter accept
+    fi
 fi
 
 # Add set with $NTPOK elements
 $NFT add set inet minifirewall minifirewall_ntpok { type ipv4_addr\;}
 if [ ! -z $NTPOK ]
 then
-    $NFT add element inet minifirewall minifirewall_ntpok {$(echo $NTPOK | sed 's/ /, /g')}
+    if echo $NTPOK | grep -q "0.0.0.0/0"
+    then
+        # If 0.0.0.0/0 is present we allow any output on TCP ports 123
+        $NFT add rule inet minifirewall minifirewall_output tcp dport 123 counter accept
+    else
+        # Else we add each element to the minifirewall_smtpsecureok set and allow this set to be reach on TCP port 123
+        $NFT add element inet minifirewall minifirewall_ntpok {$(echo $NTPOK | sed 's/ /, /g')}
+        $NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_ntpok tcp dport 123 counter accept
+    fi
 fi
 
-## DNS authorizations
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_dnsservers udp dport 53 counter accept
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_dnsservers tcp dport 53 counter accept
-
-## HTTP (TCP/80) authorizations
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_httpsites tcp dport 80 counter accept
-
-## HTTPS (TCP/443) authorizations
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_httpssites tcp dport 443 counter accept
-
-## FTP (so complex protocol...) authorizations
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_ftpsites tcp dport {20, 21, 1024-65535} counter accept
-
-## SSH authorizations
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_sshok tcp dport 22 counter accept
-
-## SMTP authorizations
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_smtpok tcp dport 25 counter accept
-
-## secure SMTP (TCP/465 et TCP/587) authorizations
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_smtpsecureok tcp dport {465, 587} counter accept
-
-## NTP authorizations
-$NFT add rule inet minifirewall minifirewall_output ip daddr @minifirewall_ntpok tcp dport 123 counter accept
+## Eventually, we drop the output traffic
+$NFT add rule inet minifirewall minifirewall_output ct state established,related accept
+$NFT add rule inet minifirewall minifirewall_output drop
 
 trap - INT TERM EXIT
 
 echo "...starting NFTables rules is now finish : OK"
 
 exit 0
+
