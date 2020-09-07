@@ -118,8 +118,8 @@ $NFT add rule inet minifirewall minifirewall_input ip saddr $INTLAN accept
 $NFT add rule inet minifirewall minifirewall_input ct state invalid drop
 
 # ICMP and IGMP traffic is accepted
-$NFT add rule inet minifirewall minifirewall_input meta l4proto ipv6-icmp icmpv6 type '{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, mld-listener-query, mld-listener-report, mld-listener-reduction, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, ind-neighbor-solicit, ind-neighbor-advert, mld2-listener-report }' accept
-$NFT add rule inet minifirewall minifirewall_input meta l4proto icmp icmp type '{ destination-unreachable, router-solicitation, router-advertisement, time-exceeded, parameter-problem }' accept
+$NFT add rule inet minifirewall minifirewall_input meta l4proto ipv6-icmp icmpv6 accept
+$NFT add rule inet minifirewall minifirewall_input meta l4proto icmp icmp accept
 $NFT add rule inet minifirewall minifirewall_input ip protocol igmp accept
 
 # New UDP traffic from trusted IPs jumps to the private_udp_ports chain
@@ -145,7 +145,6 @@ $NFT add rule inet minifirewall minifirewall_input 'meta l4proto tcp tcp flags &
 # Reject all traffic that was not processed by other rules
 $NFT add rule inet minifirewall minifirewall_input meta l4proto udp reject
 $NFT add rule inet minifirewall minifirewall_input meta l4proto tcp reject with tcp reset
-$NFT add rule inet minifirewall minifirewall_input counter reject with icmpx type port-unreachable
 
 # Feed public_tcp_ports chain with public TCP ports
 for x in $SERVICESTCP1
