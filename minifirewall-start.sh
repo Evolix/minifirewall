@@ -121,6 +121,11 @@ $NFT add rule inet minifirewall minifirewall_input ct state invalid drop
 $NFT add rule inet minifirewall minifirewall_input ip protocol icmp accept
 $NFT add rule inet minifirewall minifirewall_input ip protocol igmp accept
 
+# New UDP traffic from blocked IPs jumps to the private_udp_ports chain
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_blocked_ips meta l4proto udp ct state new jump protected_udp_ports'
+
+# New TCP traffic from blocked IPs jumps to the private_tcp_ports chain
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_blocked_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump protected_tcp_ports'
 # New UDP traffic from trusted IPs jumps to the private_udp_ports chain
 $NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_ips meta l4proto udp ct state new jump private_udp_ports'
 
