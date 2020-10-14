@@ -189,13 +189,13 @@ for x in $SERVICESUDP3
 # Feed protected_tcp_ports chain with protected TCP ports
 for x in $SERVICESTCP1p
     do
-        $NFT add rule inet minifirewall protected_tcp_ports tcp dport $x accept
+        $NFT add rule inet minifirewall protected_tcp_ports tcp dport $x drop
     done
 
 # Feed protected_udp_ports chain with protected UDP ports
 for x in $SERVICESUDP1p
     do
-        $NFT add rule inet minifirewall protected_udp_ports udp dport $x accept
+        $NFT add rule inet minifirewall protected_udp_ports udp dport $x drop
     done
 
 #
