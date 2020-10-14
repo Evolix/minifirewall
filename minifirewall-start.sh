@@ -93,6 +93,8 @@ $NFT add element inet minifirewall minifirewall_trusted_ips {$(echo $TRUSTEDIPS 
 $NFT add set inet minifirewall minifirewall_privileged_ips { type ipv4_addr\;}
 $NFT add element inet minifirewall minifirewall_privileged_ips {$(echo $PRIVILEGIEDIPS | sed 's/ /, /g')}
 
+# Add set for blocked IP addresses
+$NFT add set inet minifirewall minifirewall_blocked_ips '{ type ipv4_addr ; flags interval ;}'
 # Add TCP/UDP chains for protected, public, semi-public and private ports
 $NFT add chain inet minifirewall protected_tcp_ports
 $NFT add chain inet minifirewall protected_udp_ports
