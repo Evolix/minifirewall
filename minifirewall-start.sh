@@ -86,12 +86,10 @@ $NFT add chain inet minifirewall minifirewall_forward '{ type filter hook forwar
 $NFT add chain inet minifirewall minifirewall_output '{ type filter hook output priority 0 ; policy accept ; }'
 
 # Add set with trusted IP addresses
-#$NFT define minifirewall_trusted_ips = {$(echo $TRUSTEDIPS | sed 's/ /, /g')}
 $NFT add set inet minifirewall minifirewall_trusted_ips { type ipv4_addr\;}
 $NFT add element inet minifirewall minifirewall_trusted_ips {$(echo $TRUSTEDIPS | sed 's/ /, /g')}
 
 # Add set with  privileged IP addresses
-#$NFT define minifirewall_privileged_ips = {$(echo $PRIVILEGIEDIPS | sed 's/ /, /g')}
 $NFT add set inet minifirewall minifirewall_privileged_ips { type ipv4_addr\;}
 $NFT add element inet minifirewall minifirewall_privileged_ips {$(echo $PRIVILEGIEDIPS | sed 's/ /, /g')}
 
