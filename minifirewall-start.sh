@@ -108,15 +108,21 @@ $NFT add chain inet minifirewall minifirewall_forward '{ type filter hook forwar
 $NFT add chain inet minifirewall minifirewall_output '{ type filter hook output priority 0 ; policy drop ; }'
 
 # Add set with trusted IP addresses
-$NFT add set inet minifirewall minifirewall_trusted_ips '{ type ipv4_addr ; flags interval ;}'
-$NFT add element inet minifirewall minifirewall_trusted_ips {$(echo $TRUSTEDIPS | sed 's/ /, /g')}
+$NFT add set inet minifirewall minifirewall_trusted_v4_ips '{ type ipv4_addr ; flags interval ;}'
+ip_type "$TRUSTEDIPS"
 
+if [ -n "$v4_ips" ] ; then
+    $NFT add element inet minifirewall minifirewall_trusted_v4_ips {$v4_ips}
+fi
 # Add set with privileged IP addresses
-$NFT add set inet minifirewall minifirewall_privileged_ips '{ type ipv4_addr ; flags interval ;}'
-$NFT add element inet minifirewall minifirewall_privileged_ips {$(echo $PRIVILEGIEDIPS | sed 's/ /, /g')}
+$NFT add set inet minifirewall minifirewall_privileged_v4_ips '{ type ipv4_addr ; flags interval ;}'
+ip_type "$PRIVILEGIEDIPS"
 
+if [ -n "$v4_ips" ] ; then
+    $NFT add element inet minifirewall minifirewall_privileged_v4_ips {$v4_ips}
+fi
 # Add set for blocked IP addresses
-$NFT add set inet minifirewall minifirewall_blocked_ips '{ type ipv4_addr ; flags interval ;}'
+$NFT add set inet minifirewall minifirewall_blocked_v4_ips '{ type ipv4_addr ; flags interval ;}'
 # Add TCP/UDP chains for protected, public, semi-public and private ports
 $NFT add chain inet minifirewall protected_tcp_ports
 $NFT add chain inet minifirewall protected_udp_ports
@@ -147,23 +153,23 @@ $NFT add rule inet minifirewall minifirewall_input ip protocol icmp accept
 $NFT add rule inet minifirewall minifirewall_input ip protocol igmp accept
 
 # New UDP traffic from blocked IPs jumps to the private_udp_ports chain
-$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_blocked_ips meta l4proto udp ct state new jump protected_udp_ports'
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_blocked_v4_ips meta l4proto udp ct state new jump protected_udp_ports'
 
 # New TCP traffic from blocked IPs jumps to the private_tcp_ports chain
-$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_blocked_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump protected_tcp_ports'
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_blocked_v4_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump protected_tcp_ports'
 # New UDP traffic from trusted IPs jumps to the private_udp_ports chain
-$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_ips meta l4proto udp ct state new jump private_udp_ports'
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_v4_ips meta l4proto udp ct state new jump private_udp_ports'
 
 # New TCP traffic from trusted IPs jumps to the private_tcp_ports chain
-$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump private_tcp_ports'
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_v4_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump private_tcp_ports'
 
 # New UDP traffic from trusted IPs and privileged IPs jumps to the semipublic_udp_ports chain
-$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_privileged_ips meta l4proto udp ct state new jump semipublic_udp_ports'
-$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_ips meta l4proto udp ct state new jump semipublic_udp_ports'
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_privileged_v4_ips meta l4proto udp ct state new jump semipublic_udp_ports'
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_v4_ips meta l4proto udp ct state new jump semipublic_udp_ports'
 
 # New TCP traffic from trusted IPs and privileged IPs jumps to the semipublic_tcp_ports chain
-$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_privileged_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump semipublic_tcp_ports'
-$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump semipublic_tcp_ports'
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_privileged_v4_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump semipublic_tcp_ports'
+$NFT add rule inet minifirewall minifirewall_input 'ip saddr @minifirewall_trusted_v4_ips meta l4proto tcp tcp flags & (fin|syn|rst|ack) == syn ct state new jump semipublic_tcp_ports'
 
 # New UDP traffic from any other IP jumps to the public_udp_ports chain
 $NFT add rule inet minifirewall minifirewall_input 'meta l4proto udp ct state new jump public_udp_ports'
