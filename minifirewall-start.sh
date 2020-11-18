@@ -82,10 +82,10 @@ $NFT flush ruleset
 # Add a filter table
 $NFT add table inet minifirewall
 
-# Add the input, forward, and output base chains. The policy for input and forward will be to drop. The policy for output will be to accept.
+# Add the input, forward, and output base chains. The default policy will be to drop the traffic.
 $NFT add chain inet minifirewall minifirewall_input '{ type filter hook input priority 0 ; policy drop ; }'
 $NFT add chain inet minifirewall minifirewall_forward '{ type filter hook forward priority 0 ; policy drop ; }'
-$NFT add chain inet minifirewall minifirewall_output '{ type filter hook output priority 0 ; policy accept ; }'
+$NFT add chain inet minifirewall minifirewall_output '{ type filter hook output priority 0 ; policy drop ; }'
 
 # Add set with trusted IP addresses
 $NFT add set inet minifirewall minifirewall_trusted_ips '{ type ipv4_addr ; flags interval ;}'
