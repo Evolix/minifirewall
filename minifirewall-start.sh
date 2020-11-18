@@ -165,6 +165,7 @@ $NFT add rule inet minifirewall minifirewall_input ct state invalid drop
 
 # ICMP and IGMP traffic is accepted
 $NFT add rule inet minifirewall minifirewall_input ip protocol icmp accept
+$NFT add rule inet minifirewall minifirewall_input meta l4proto ipv6-icmp accept
 $NFT add rule inet minifirewall minifirewall_input ip protocol igmp accept
 
 # New UDP traffic from blocked IPs jumps to the private_udp_ports chain
