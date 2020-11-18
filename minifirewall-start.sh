@@ -64,6 +64,26 @@ for i in /proc/sys/net/ipv4/conf/*/log_martians; do
 echo 1 > $i
 done
 
+############
+## FUNCTIONS
+############
+
+# Determine IP type
+ip_type() {
+    v4_ips=""
+    v6_ips=""
+    for ip in $(echo $1 | sed 's/ /, /g'); do
+        if [ "$ip" != "${ip#*[0-9].[0-9]}" ]; then
+            v4_ips="$v4_ips$ip "
+        elif [ "$ip" != "${ip#*:[0-9a-fA-F]}" ]; then
+            v6_ips="$v6_ips$ip "
+        else
+            echo "Unrecognized IP format '$ip'"
+            exit 1
+        fi
+    done
+}
+
 #########################
 ## NFTables configuration
 #########################
