@@ -64,14 +64,16 @@ for i in /proc/sys/net/ipv4/conf/*/log_martians; do
 echo 1 > $i
 done
 
-# IPTables configuration
-########################
+#########################
+## NFTables configuration
+#########################
 
 if ! test -f $configfile; then
     echo "$configfile does not exist" >&2
     exit 1
 fi
 
+# Parse configuration file
 . $configfile
 
 # Flush everything first
@@ -105,6 +107,9 @@ $NFT add chain inet minifirewall semipublic_udp_ports
 $NFT add chain inet minifirewall private_tcp_ports
 $NFT add chain inet minifirewall private_udp_ports
 
+################
+## Input traffic
+################
 # Related and established traffic is accepted
 $NFT add rule inet minifirewall minifirewall_input ct state related,established accept
 
@@ -198,9 +203,9 @@ for x in $SERVICESUDP1p
         $NFT add rule inet minifirewall protected_udp_ports udp dport $x drop
     done
 
-#
-## External services
-####################
+#####################################
+## Output traffic / external services
+#####################################
 
 # Add set with $DNSSERVERS elements
 $NFT add set inet minifirewall minifirewall_dnsservers { type ipv4_addr\;}
