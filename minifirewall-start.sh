@@ -381,6 +381,11 @@ fi
 
 $NFT add rule inet minifirewall minifirewall_output ct state established,related accept
 
+# ICMP and IGMP traffic is accepted
+$NFT add rule inet minifirewall minifirewall_output ip protocol icmp accept
+$NFT add rule inet minifirewall minifirewall_output meta l4proto ipv6-icmp accept
+$NFT add rule inet minifirewall minifirewall_output ip protocol igmp accept
+
 trap - INT TERM EXIT
 
 echo "...starting NFTables rules is now finish : OK"
