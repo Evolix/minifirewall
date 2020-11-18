@@ -380,6 +380,7 @@ then
     fi
 fi
 
+# Related and established traffic is accepted
 $NFT add rule inet minifirewall minifirewall_output ct state established,related accept
 
 # ICMP and IGMP traffic is accepted
