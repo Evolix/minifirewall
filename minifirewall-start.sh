@@ -380,6 +380,17 @@ then
     fi
 fi
 
+# If specified, we add per host output autorisation
+if [ -n $OUTPUTOK ]
+then
+    for item in $(echo $OUTPUTOK)
+        do
+            ip=$(echo $item | awk -F'!' '{print $1}')
+            port=$(echo $item | awk -F'!' '{print $2}')
+            $NFT add rule inet minifirewall minifirewall_output ip daddr $ip tcp dport $port counter accept
+        done
+fi
+
 # Related and established traffic is accepted
 $NFT add rule inet minifirewall minifirewall_output ct state established,related accept
 
