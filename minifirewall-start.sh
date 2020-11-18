@@ -329,10 +329,7 @@ then
     fi
 fi
 
-## Eventually, we drop the output traffic
 $NFT add rule inet minifirewall minifirewall_output ct state established,related accept
-$NFT add rule inet minifirewall minifirewall_output meta l4proto udp drop
-$NFT add rule inet minifirewall minifirewall_output meta l4proto tcp drop
 
 trap - INT TERM EXIT
 
