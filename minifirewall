@@ -38,8 +38,16 @@ set -u
 #########################
 
 # iptables paths
-IPT=/sbin/iptables
-IPT6=/sbin/ip6tables
+IPT=$(command -v iptables)
+if [ -z "${IPT}" ]; then
+    echo "Unable to find 'iptables\` command in PATH." >&2
+    exit 1
+fi
+IPT6=$(command -v ip6tables)
+if [ -z "${IPT6}" ]; then
+    echo "Unable to find 'ip6tables\` command in PATH." >&2
+    exit 1
+fi
 
 # TCP/IP variables
 LOOPBACK='127.0.0.0/8'
