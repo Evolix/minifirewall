@@ -61,6 +61,7 @@ chain_exists()
 # Configuration
 oldconfigfile="/etc/firewall.rc"
 configfile="/etc/default/minifirewall"
+includesdir="/etc/default/minifirewall.d"
 
 IPV6=$(grep "IPV6=" /etc/default/minifirewall | awk -F '=' -F "'" '{print $2}')
 DOCKER=$(grep "DOCKER=" /etc/default/minifirewall | awk -F '='  -F "'" '{print $2}')
@@ -133,14 +134,25 @@ if ! test -f $configfile; then
     exit 1
 fi
 
-tmpfile=`mktemp`
-. $configfile 2>$tmpfile >&2
-if [ -s $tmpfile ]; then
-        echo "$configfile returns standard or error output (see below). Stopping." >&2
-        cat $tmpfile
-        exit 1
+source_file_or_error() {
+    file=$1
+    echo "...sourcing '${file}\`"
+    tmpfile=$(mktemp --tmpdir=/tmp minifirewall.XXX)
+    . ${file} 2>${tmpfile} >&2
+    if [ -s ${tmpfile} ]; then
+            echo "${file} returns standard or error output (see below). Stopping." >&2
+            cat ${tmpfile}
+            exit 1
+    fi
+    rm ${tmpfile}
+}
+source_file_or_error ${configfile}
+if [ -d "${includesdir}" ]; then
+    includefiles=$(find ${includesdir} -type f -readable -not -name '*.*')
+    for includefile in ${includefiles}; do
+        source_file_or_error "${includefile}"
+    done
 fi
-rm $tmpfile
 
 # Trusted ip addresses
 $IPT -N ONLYTRUSTED

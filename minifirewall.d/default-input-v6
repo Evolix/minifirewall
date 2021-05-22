@@ -1,0 +1,7 @@
+# shellcheck shell=sh disable=SC2034
+# allow input HTTP/HTTPS/SMTP/DNS traffic
+/sbin/ip6tables -A INPUT -i $INT -p tcp --sport 80 --match state --state ESTABLISHED,RELATED -j ACCEPT
+/sbin/ip6tables -A INPUT -i $INT -p tcp --sport 443 --match state --state ESTABLISHED,RELATED -j ACCEPT
+/sbin/ip6tables -A INPUT -i $INT -p tcp --sport 25 --match state --state ESTABLISHED,RELATED -j ACCEPT
+/sbin/ip6tables -A INPUT -i $INT -p udp --sport 53 --match state --state ESTABLISHED,RELATED -j ACCEPT
+/sbin/ip6tables -A INPUT -i $INT -p tcp --sport 53 --match state --state ESTABLISHED,RELATED -j ACCEPT
