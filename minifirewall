@@ -140,8 +140,8 @@ start() {
     echo 1 > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
 
     # Disable Source Routing
-    for i in /proc/sys/net/ipv4/conf/*/accept_source_route; do
-        echo 0 > "${i}"
+    for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_source_route; do
+        echo 0 > "${proc_sys_file}"
     done
 
     # Enable TCP SYN cookies to avoid TCP-SYN-FLOOD attacks
@@ -149,22 +149,22 @@ start() {
     echo 1 > /proc/sys/net/ipv4/tcp_syncookies
 
     # Disable ICMP redirects
-    for i in /proc/sys/net/ipv4/conf/*/accept_redirects; do
-        echo 0 > "${i}"
+    for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_redirects; do
+        echo 0 > "${proc_sys_file}"
     done
 
-    for i in /proc/sys/net/ipv4/conf/*/send_redirects; do
-        echo 0 > "${i}"
+    for proc_sys_file in /proc/sys/net/ipv4/conf/*/send_redirects; do
+        echo 0 > "${proc_sys_file}"
     done
 
     # Enable Reverse Path filtering : verify if responses use same network interface
-    for i in /proc/sys/net/ipv4/conf/*/rp_filter; do
-        echo 1 > "${i}"
+    for proc_sys_file in /proc/sys/net/ipv4/conf/*/rp_filter; do
+        echo 1 > "${proc_sys_file}"
     done
 
     # log des paquets avec adresse incoherente
-    for i in /proc/sys/net/ipv4/conf/*/log_martians; do
-        echo 1 > "${i}"
+    for proc_sys_file in /proc/sys/net/ipv4/conf/*/log_martians; do
+        echo 1 > "${proc_sys_file}"
     done
 
     # IPTables configuration
