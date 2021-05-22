@@ -223,49 +223,49 @@ start() {
     ${IPT} -A INPUT -s ${INTLAN} -j ACCEPT
 
     # Enable protection chain for sensible services
-    for x in ${SERVICESTCP1p}
+    for port in ${SERVICESTCP1p}
         do
-            ${IPT} -A INPUT -p tcp --dport ${x} -j NEEDRESTRICT
+            ${IPT} -A INPUT -p tcp --dport ${port} -j NEEDRESTRICT
         done
 
-    for x in ${SERVICESUDP1p}
+    for port in ${SERVICESUDP1p}
         do
-            ${IPT} -A INPUT -p udp --dport ${x} -j NEEDRESTRICT
+            ${IPT} -A INPUT -p udp --dport ${port} -j NEEDRESTRICT
         done
 
     # Public service
-    for x in ${SERVICESTCP1}
+    for port in ${SERVICESTCP1}
         do
-            ${IPT} -A INPUT -p tcp --dport ${x} -j ACCEPT
-            [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p tcp --dport ${x} -j ACCEPT
+            ${IPT} -A INPUT -p tcp --dport ${port} -j ACCEPT
+            [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p tcp --dport ${port} -j ACCEPT
         done
 
-    for x in ${SERVICESUDP1}
+    for port in ${SERVICESUDP1}
         do
-            ${IPT} -A INPUT -p udp --dport ${x} -j ACCEPT
-            [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p udp --dport ${x} -j ACCEPT
+            ${IPT} -A INPUT -p udp --dport ${port} -j ACCEPT
+            [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p udp --dport ${port} -j ACCEPT
         done
 
     # Privilegied services
-    for x in ${SERVICESTCP2}
+    for port in ${SERVICESTCP2}
         do
-            ${IPT} -A INPUT -p tcp --dport ${x} -j ONLYPRIVILEGIED
+            ${IPT} -A INPUT -p tcp --dport ${port} -j ONLYPRIVILEGIED
         done
 
-    for x in ${SERVICESUDP2}
+    for port in ${SERVICESUDP2}
         do
-            ${IPT} -A INPUT -p udp --dport ${x} -j ONLYPRIVILEGIED
+            ${IPT} -A INPUT -p udp --dport ${port} -j ONLYPRIVILEGIED
         done
 
     # Private services
-    for x in ${SERVICESTCP3}
+    for port in ${SERVICESTCP3}
         do
-            ${IPT} -A INPUT -p tcp --dport ${x} -j ONLYTRUSTED
+            ${IPT} -A INPUT -p tcp --dport ${port} -j ONLYTRUSTED
         done
 
-    for x in ${SERVICESUDP3}
+    for port in ${SERVICESUDP3}
         do
-            ${IPT} -A INPUT -p udp --dport ${x} -j ONLYTRUSTED
+            ${IPT} -A INPUT -p udp --dport ${port} -j ONLYTRUSTED
         done
 
 
