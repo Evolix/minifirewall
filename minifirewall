@@ -86,13 +86,13 @@ SMTPOK=''
 SMTPSECUREOK=''
 NTPOK=''
 
-oldconfigfile="/etc/firewall.rc"
-configfile="/etc/default/minifirewall"
-includesdir="/etc/default/minifirewall.d"
+legacy_config_file="/etc/firewall.rc"
+config_file="/etc/default/minifirewall"
+includes_dir="/etc/default/minifirewall.d"
 
-IPV6=$(grep "IPV6=" /etc/default/minifirewall | awk -F '=' -F "'" '{print $2}')
-DOCKER=$(grep "DOCKER=" /etc/default/minifirewall | awk -F '='  -F "'" '{print $2}')
-INT=$(grep "INT=" /etc/default/minifirewall | awk -F '='  -F "'" '{print $2}')
+IPV6=$(grep "IPV6=" "${config_file}" | awk -F '=' -F "'" '{print $2}')
+DOCKER=$(grep "DOCKER=" "${config_file}" | awk -F '='  -F "'" '{print $2}')
+INT=$(grep "INT=" "${config_file}" | awk -F '='  -F "'" '{print $2}')
 
 is_ipv6_enabled() {
     test "${IPV6}" != "off"
@@ -120,6 +120,26 @@ source_file_or_error() {
             exit 1
     fi
     rm "${tmpfile}"
+}
+source_configuration() {
+    if test -f ${legacy_config_file}; then
+        echo "${legacy_config_file} is deprecated, rename to ${config_file}" >&2
+        exit 1
+    fi
+
+    if ! test -f ${config_file}; then
+        echo "${config_file} does not exist" >&2
+        exit 1
+    fi
+
+    source_file_or_error ${config_file}
+
+    if [ -d "${includes_dir}" ]; then
+        include_files=$(find ${includes_dir} -type f -readable -not -name '*.*')
+        for include_file in ${include_files}; do
+            source_file_or_error "${include_file}"
+        done
+    fi
 }
 
 start() {
@@ -177,24 +197,7 @@ start() {
     ${IPT} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
     ${IPT} -A LOG_ACCEPT -j ACCEPT
 
-    if test -f ${oldconfigfile}; then
-        echo "${oldconfigfile} is deprecated, rename to ${configfile}" >&2
-        exit 1
-    fi
-
-    if ! test -f ${configfile}; then
-        echo "${configfile} does not exist" >&2
-        exit 1
-    fi
-
-    source_file_or_error ${configfile}
-
-    if [ -d "${includesdir}" ]; then
-        includefiles=$(find ${includesdir} -type f -readable -not -name '*.*')
-        for includefile in ${includefiles}; do
-            source_file_or_error "${includefile}"
-        done
-    fi
+    source_configuration
 
     # Trusted ip addresses
     ${IPT} -N ONLYTRUSTED
