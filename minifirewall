@@ -86,6 +86,13 @@ IPV6=$(grep "IPV6=" /etc/default/minifirewall | awk -F '=' -F "'" '{print $2}')
 DOCKER=$(grep "DOCKER=" /etc/default/minifirewall | awk -F '='  -F "'" '{print $2}')
 INT=$(grep "INT=" /etc/default/minifirewall | awk -F '='  -F "'" '{print $2}')
 
+is_ipv6_enabled() {
+    test "${IPV6}" != "off"
+}
+is_docker_enabled() {
+    test "${DOCKER}" = "on"
+}
+
 chain_exists() {
     local chain_name="$1" ; shift
     [ $# -eq 1 ] && local intable="--table $1"
@@ -201,10 +208,14 @@ start() {
 
     # We allow all on loopback interface
     ${IPT} -A INPUT -i lo -j ACCEPT
-    [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -i lo -j ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -A INPUT -i lo -j ACCEPT
+    fi
     # if OUTPUTDROP
     ${IPT} -A OUTPUT -o lo -j ACCEPT
-    [ "${IPV6}" != "off" ] && ${IPT6} -A OUTPUT -o lo -j ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -A OUTPUT -o lo -j ACCEPT
+    fi
 
     # We avoid "martians" packets, typical when W32/Blaster virus
     # attacked windowsupdate.com and DNS was changed to 127.0.0.1
@@ -212,7 +223,7 @@ start() {
     ${IPT} -A INPUT -s ${LOOPBACK} ! -i lo -j DROP
 
 
-    if [ "${DOCKER}" = "on" ]; then
+    if is_docker_enabled; then
         ${IPT} -N MINIFW-DOCKER-TRUSTED
         ${IPT} -A MINIFW-DOCKER-TRUSTED -j DROP
 
@@ -255,12 +266,16 @@ start() {
     # Public service
     for port in ${SERVICESTCP1}; do
         ${IPT} -A INPUT -p tcp --dport ${port} -j ACCEPT
-        [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p tcp --dport ${port} -j ACCEPT
+        if is_ipv6_enabled; then
+            ${IPT6} -A INPUT -p tcp --dport ${port} -j ACCEPT
+        fi
     done
 
     for port in ${SERVICESUDP1}; do
         ${IPT} -A INPUT -p udp --dport ${port} -j ACCEPT
-        [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p udp --dport ${port} -j ACCEPT
+        if is_ipv6_enabled; then
+            ${IPT6} -A INPUT -p udp --dport ${port} -j ACCEPT
+        fi
     done
 
     # Privilegied services
@@ -282,7 +297,7 @@ start() {
     done
 
 
-    if [ "${DOCKER}" = "on" ]; then
+    if is_docker_enabled; then
         # Public services defined in SERVICESTCP1 & SERVICESUDP1
         for dstport in ${SERVICESTCP1}; do
             ${IPT} -I MINIFW-DOCKER-PUB -p tcp --dport "${dstport}" -j RETURN
@@ -382,7 +397,9 @@ start() {
 
     # Always allow ICMP
     ${IPT} -A INPUT -p icmp -j ACCEPT
-    [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p icmpv6 -j ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -A INPUT -p icmpv6 -j ACCEPT
+    fi
 
 
     # IPTables policy
@@ -390,22 +407,35 @@ start() {
 
     # by default DROP INPUT packets
     ${IPT} -P INPUT DROP
-    [ "${IPV6}" != "off" ] && ${IPT6} -P INPUT DROP
+    if is_ipv6_enabled; then
+        ${IPT6} -P INPUT DROP
+    fi
 
-    # by default, no FORWARING (deprecated for Virtual Machines)
+    # by default, no FORWARDING (deprecated for Virtual Machines)
     #echo 0 > /proc/sys/net/ipv4/ip_forward
     #${IPT} -P FORWARD DROP
     #${IPT6} -P FORWARD DROP
 
     # by default allow OUTPUT packets... but drop UDP packets (see OUTPUTDROP to drop OUTPUT packets)
     ${IPT} -P OUTPUT ACCEPT
-    [ "${IPV6}" != "off" ] && ${IPT6} -P OUTPUT ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -P OUTPUT ACCEPT
+    fi
+    
     ${IPT} -A OUTPUT -o ${INT} -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -A OUTPUT -o ${INT} -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
+    fi
+    
     ${IPT} -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
+    fi
+
     ${IPT} -A OUTPUT -p udp -j DROP
-    [ "${IPV6}" != "off" ] && ${IPT6} -A OUTPUT -o ${INT} -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
-    [ "${IPV6}" != "off" ] && ${IPT6} -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
-    [ "${IPV6}" != "off" ] && ${IPT6} -A OUTPUT -p udp -j DROP
+    if is_ipv6_enabled; then
+        ${IPT6} -A OUTPUT -p udp -j DROP
+    fi
 
     trap - INT TERM EXIT
 
@@ -417,18 +447,24 @@ stop() {
 
     # Delete all rules
     ${IPT} -F INPUT
+    if is_ipv6_enabled; then
+        ${IPT6} -F INPUT
+    fi
+    
     ${IPT} -F OUTPUT
+    if is_ipv6_enabled; then
+        ${IPT6} -F OUTPUT
+    fi
+
     ${IPT} -F LOG_DROP
     ${IPT} -F LOG_ACCEPT
     ${IPT} -F ONLYTRUSTED
     ${IPT} -F ONLYPRIVILEGIED
     ${IPT} -F NEEDRESTRICT
-    [ "${DOCKER}" = "off" ] && ${IPT} -t nat -F
+ 
     ${IPT} -t mangle -F
-    [ "${IPV6}" != "off" ] && ${IPT6} -F INPUT
-    [ "${IPV6}" != "off" ] && ${IPT6} -F OUTPUT
 
-    if [ "${DOCKER}" = "on" ]; then
+    if is_docker_enabled; then
         ${IPT} -F DOCKER-USER
         ${IPT} -A DOCKER-USER -j RETURN
 
@@ -438,13 +474,20 @@ stop() {
         ${IPT} -X MINIFW-DOCKER-PRIVILEGED
         ${IPT} -F MINIFW-DOCKER-TRUSTED
         ${IPT} -X MINIFW-DOCKER-TRUSTED
+    else
+        ${IPT} -t nat -F
     fi
 
     # Accept all
     ${IPT} -P INPUT ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -P INPUT ACCEPT
+    fi
+
     ${IPT} -P OUTPUT ACCEPT
-    [ "${IPV6}" != "off" ] && ${IPT6} -P INPUT ACCEPT
-    [ "${IPV6}" != "off" ] && ${IPT6} -P OUTPUT ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -P OUTPUT ACCEPT
+    fi
     #${IPT} -P FORWARD ACCEPT
     #${IPT} -t nat -P PREROUTING ACCEPT
     #${IPT} -t nat -P POSTROUTING ACCEPT
@@ -471,10 +514,16 @@ reset() {
     echo "Reset all IPTables counters..."
 
     ${IPT} -Z
+    if is_ipv6_enabled; then
+        ${IPT6} -Z
+    fi
+
     ${IPT} -t nat -Z
+
     ${IPT} -t mangle -Z
-    [ "${IPV6}" != "off" ] && ${IPT6} -Z
-    [ "${IPV6}" != "off" ] && ${IPT6} -t mangle -Z
+    if is_ipv6_enabled; then
+        ${IPT6} -t mangle -Z
+    fi
 
     echo "...reseting IPTables counters is now finish : OK"
 }
