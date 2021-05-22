@@ -331,53 +331,53 @@ start() {
     ###################
 
     # DNS authorizations
-    for x in ${DNSSERVEURS}; do
-        ${IPT} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-        ${IPT} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${x} -m state --state ESTABLISHED,RELATED -j ACCEPT
-        ${IPT} -A OUTPUT -o ${INT} -p udp -d ${x} --dport 53 --match state --state NEW -j ACCEPT
+    for src in ${DNSSERVEURS}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+        ${IPT} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${src} -m state --state ESTABLISHED,RELATED -j ACCEPT
+        ${IPT} -A OUTPUT -o ${INT} -p udp -d ${src} --dport 53 --match state --state NEW -j ACCEPT
     done
 
     # HTTP (TCP/80) authorizations
-    for x in ${HTTPSITES}; do
-        ${IPT} -A INPUT -p tcp ! --syn --sport 80 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    for src in ${HTTPSITES}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 80 --dport ${PORTSUSER} -s ${src} -j ACCEPT
     done
 
     # HTTPS (TCP/443) authorizations
-    for x in ${HTTPSSITES}; do
-        ${IPT} -A INPUT -p tcp ! --syn --sport 443 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    for src in ${HTTPSSITES}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 443 --dport ${PORTSUSER} -s ${src} -j ACCEPT
     done
 
     # FTP (so complex protocol...) authorizations
-    for x in ${FTPSITES}; do
+    for src in ${FTPSITES}; do
         # requests on Control connection
-        ${IPT} -A INPUT -p tcp ! --syn --sport 21 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+        ${IPT} -A INPUT -p tcp ! --syn --sport 21 --dport ${PORTSUSER} -s ${src} -j ACCEPT
         # FTP port-mode on Data Connection
-        ${IPT} -A INPUT -p tcp --sport 20 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+        ${IPT} -A INPUT -p tcp --sport 20 --dport ${PORTSUSER} -s ${src} -j ACCEPT
         # FTP passive-mode on Data Connection
         # WARNING, this allow all connections on TCP ports > 1024
-        ${IPT} -A INPUT -p tcp ! --syn --sport ${PORTSUSER} --dport ${PORTSUSER} -s ${x} -j ACCEPT
+        ${IPT} -A INPUT -p tcp ! --syn --sport ${PORTSUSER} --dport ${PORTSUSER} -s ${src} -j ACCEPT
     done
 
     # SSH authorizations
-    for x in ${SSHOK}; do
-        ${IPT} -A INPUT -p tcp ! --syn --sport 22 -s ${x} -j ACCEPT
+    for src in ${SSHOK}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 22 -s ${src} -j ACCEPT
     done
 
     # SMTP authorizations
-    for x in ${SMTPOK}; do
-        ${IPT} -A INPUT -p tcp ! --syn --sport 25 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    for src in ${SMTPOK}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 25 --dport ${PORTSUSER} -s ${src} -j ACCEPT
     done
 
     # secure SMTP (TCP/465 et TCP/587) authorizations
-    for x in ${SMTPSECUREOK}; do
-        ${IPT} -A INPUT -p tcp ! --syn --sport 465 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-        ${IPT} -A INPUT -p tcp ! --syn --sport 587 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    for src in ${SMTPSECUREOK}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 465 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+        ${IPT} -A INPUT -p tcp ! --syn --sport 587 --dport ${PORTSUSER} -s ${src} -j ACCEPT
     done
 
     # NTP authorizations
-    for x in ${NTPOK}; do
-        ${IPT} -A INPUT -p udp --sport 123 -s ${x} -j ACCEPT
-        ${IPT} -A OUTPUT -o ${INT} -p udp -d ${x} --dport 123 --match state --state NEW -j ACCEPT
+    for src in ${NTPOK}; do
+        ${IPT} -A INPUT -p udp --sport 123 -s ${src} -j ACCEPT
+        ${IPT} -A OUTPUT -o ${INT} -p udp -d ${src} --dport 123 --match state --state NEW -j ACCEPT
     done
 
     # Always allow ICMP
