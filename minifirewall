@@ -70,7 +70,7 @@ chain_exists()
 source_file_or_error() {
     file=$1
     echo "...sourcing '${file}\`"
-    
+
     tmpfile=$(mktemp --tmpdir=/tmp minifirewall.XXX)
     . ${file} 2>${tmpfile} >&2
     if [ -s ${tmpfile} ]; then
@@ -511,7 +511,7 @@ case "$1" in
 
   *)
 
-    echo "Usage: $0 {start|stop|restart|status|reset|squid}"
+    echo "Usage: $0 {start|stop|restart|status|reset}"
     exit 1
 esac
 
