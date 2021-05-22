@@ -159,19 +159,17 @@ start() {
     # Trusted ip addresses
     ${IPT} -N ONLYTRUSTED
     ${IPT} -A ONLYTRUSTED -j LOG_DROP
-    for x in ${TRUSTEDIPS}
-        do
-            ${IPT} -I ONLYTRUSTED -s ${x} -j ACCEPT
-        done
+    for ip in ${TRUSTEDIPS}; do
+        ${IPT} -I ONLYTRUSTED -s ${ip} -j ACCEPT
+    done
 
     # Privilegied ip addresses
     # (trusted ip addresses *are* privilegied)
     ${IPT} -N ONLYPRIVILEGIED
     ${IPT} -A ONLYPRIVILEGIED -j ONLYTRUSTED
-    for x in ${PRIVILEGIEDIPS}
-        do
-            ${IPT} -I ONLYPRIVILEGIED -s ${x} -j ACCEPT
-        done
+    for ip in ${PRIVILEGIEDIPS}; do
+        ${IPT} -I ONLYPRIVILEGIED -s ${ip} -j ACCEPT
+    done
 
     # Chain for restrictions (blacklist IPs/ranges)
     ${IPT} -N NEEDRESTRICT
@@ -223,170 +221,142 @@ start() {
     ${IPT} -A INPUT -s ${INTLAN} -j ACCEPT
 
     # Enable protection chain for sensible services
-    for port in ${SERVICESTCP1p}
-        do
-            ${IPT} -A INPUT -p tcp --dport ${port} -j NEEDRESTRICT
-        done
+    for port in ${SERVICESTCP1p}; do
+        ${IPT} -A INPUT -p tcp --dport ${port} -j NEEDRESTRICT
+    done
 
-    for port in ${SERVICESUDP1p}
-        do
-            ${IPT} -A INPUT -p udp --dport ${port} -j NEEDRESTRICT
-        done
+    for port in ${SERVICESUDP1p}; do
+        ${IPT} -A INPUT -p udp --dport ${port} -j NEEDRESTRICT
+    done
 
     # Public service
-    for port in ${SERVICESTCP1}
-        do
-            ${IPT} -A INPUT -p tcp --dport ${port} -j ACCEPT
-            [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p tcp --dport ${port} -j ACCEPT
-        done
+    for port in ${SERVICESTCP1}; do
+        ${IPT} -A INPUT -p tcp --dport ${port} -j ACCEPT
+        [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p tcp --dport ${port} -j ACCEPT
+    done
 
-    for port in ${SERVICESUDP1}
-        do
-            ${IPT} -A INPUT -p udp --dport ${port} -j ACCEPT
-            [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p udp --dport ${port} -j ACCEPT
-        done
+    for port in ${SERVICESUDP1}; do
+        ${IPT} -A INPUT -p udp --dport ${port} -j ACCEPT
+        [ "${IPV6}" != "off" ] && ${IPT6} -A INPUT -p udp --dport ${port} -j ACCEPT
+    done
 
     # Privilegied services
-    for port in ${SERVICESTCP2}
-        do
-            ${IPT} -A INPUT -p tcp --dport ${port} -j ONLYPRIVILEGIED
-        done
+    for port in ${SERVICESTCP2}; do
+        ${IPT} -A INPUT -p tcp --dport ${port} -j ONLYPRIVILEGIED
+    done
 
-    for port in ${SERVICESUDP2}
-        do
-            ${IPT} -A INPUT -p udp --dport ${port} -j ONLYPRIVILEGIED
-        done
+    for port in ${SERVICESUDP2}; do
+        ${IPT} -A INPUT -p udp --dport ${port} -j ONLYPRIVILEGIED
+    done
 
     # Private services
-    for port in ${SERVICESTCP3}
-        do
-            ${IPT} -A INPUT -p tcp --dport ${port} -j ONLYTRUSTED
-        done
+    for port in ${SERVICESTCP3}; do
+        ${IPT} -A INPUT -p tcp --dport ${port} -j ONLYTRUSTED
+    done
 
-    for port in ${SERVICESUDP3}
-        do
-            ${IPT} -A INPUT -p udp --dport ${port} -j ONLYTRUSTED
-        done
+    for port in ${SERVICESUDP3}; do
+        ${IPT} -A INPUT -p udp --dport ${port} -j ONLYTRUSTED
+    done
 
 
     if [ "${DOCKER}" = "on" ]; then
 
         # Public services defined in SERVICESTCP1 & SERVICESUDP1
-        for dstport in ${SERVICESTCP1}
-            do
-                ${IPT} -I MINIFW-DOCKER-PUB -p tcp --dport "${dstport}" -j RETURN
-            done
+        for dstport in ${SERVICESTCP1}; do
+            ${IPT} -I MINIFW-DOCKER-PUB -p tcp --dport "${dstport}" -j RETURN
+        done
 
-        for dstport in ${SERVICESUDP1}
-            do
-                ${IPT} -I MINIFW-DOCKER-PUB -p udp --dport "${dstport}" -j RETURN
-            done
+        for dstport in ${SERVICESUDP1}; do
+            ${IPT} -I MINIFW-DOCKER-PUB -p udp --dport "${dstport}" -j RETURN
+        done
 
         # Privileged services (accessible from privileged & trusted IPs)
-        for dstport in ${SERVICESTCP2}
-            do
-                for srcip in ${PRIVILEGIEDIPS}
-                    do
-                        ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
-                    done
-
-                for srcip in ${TRUSTEDIPS}
-                    do
-                        ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
-                    done
+        for dstport in ${SERVICESTCP2}; do
+            for srcip in ${PRIVILEGIEDIPS}; do
+                ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
             done
 
-        for dstport in ${SERVICESUDP2}
-            do
-                for srcip in ${PRIVILEGIEDIPS}
-                    do
-                        ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
-                    done
-
-                for srcip in ${TRUSTEDIPS}
-                    do
-                        ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
-                    done
+            for srcip in ${TRUSTEDIPS}; do
+                ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
             done
+        done
+
+        for dstport in ${SERVICESUDP2}; do
+            for srcip in ${PRIVILEGIEDIPS}; do
+                ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+            done
+
+            for srcip in ${TRUSTEDIPS}; do
+                ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+            done
+        done
 
         # Trusted services (accessible from trusted IPs)
-        for dstport in ${SERVICESTCP3}
-            do
-                for srcip in ${TRUSTEDIPS}
-                    do
-                        ${IPT} -I MINIFW-DOCKER-TRUSTED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
-                    done
+        for dstport in ${SERVICESTCP3}; do
+            for srcip in ${TRUSTEDIPS}; do
+                ${IPT} -I MINIFW-DOCKER-TRUSTED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
             done
+        done
 
-        for dstport in ${SERVICESUDP3}
-            do
-                for srcip in ${TRUSTEDIPS}
-                    do
-                        ${IPT} -I MINIFW-DOCKER-TRUSTED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
-                    done
+        for dstport in ${SERVICESUDP3}; do
+            for srcip in ${TRUSTEDIPS}; do
+                ${IPT} -I MINIFW-DOCKER-TRUSTED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
             done
+        done
     fi
 
     # External services
     ###################
 
     # DNS authorizations
-    for x in ${DNSSERVEURS}
-        do
-            ${IPT} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-            ${IPT} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${x} -m state --state ESTABLISHED,RELATED -j ACCEPT
-            ${IPT} -A OUTPUT -o ${INT} -p udp -d ${x} --dport 53 --match state --state NEW -j ACCEPT
-        done
+    for x in ${DNSSERVEURS}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+        ${IPT} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${x} -m state --state ESTABLISHED,RELATED -j ACCEPT
+        ${IPT} -A OUTPUT -o ${INT} -p udp -d ${x} --dport 53 --match state --state NEW -j ACCEPT
+    done
 
     # HTTP (TCP/80) authorizations
-    for x in ${HTTPSITES}
-        do
-            ${IPT} -A INPUT -p tcp ! --syn --sport 80 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-        done
+    for x in ${HTTPSITES}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 80 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    done
 
     # HTTPS (TCP/443) authorizations
-    for x in ${HTTPSSITES}
-        do
-            ${IPT} -A INPUT -p tcp ! --syn --sport 443 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-        done
+    for x in ${HTTPSSITES}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 443 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    done
 
     # FTP (so complex protocol...) authorizations
-    for x in ${FTPSITES}
-        do
-            # requests on Control connection
-            ${IPT} -A INPUT -p tcp ! --syn --sport 21 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-            # FTP port-mode on Data Connection
-            ${IPT} -A INPUT -p tcp --sport 20 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-            # FTP passive-mode on Data Connection
-            # WARNING, this allow all connections on TCP ports > 1024
-            ${IPT} -A INPUT -p tcp ! --syn --sport ${PORTSUSER} --dport ${PORTSUSER} -s ${x} -j ACCEPT
-        done
+    for x in ${FTPSITES}; do
+        # requests on Control connection
+        ${IPT} -A INPUT -p tcp ! --syn --sport 21 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+        # FTP port-mode on Data Connection
+        ${IPT} -A INPUT -p tcp --sport 20 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+        # FTP passive-mode on Data Connection
+        # WARNING, this allow all connections on TCP ports > 1024
+        ${IPT} -A INPUT -p tcp ! --syn --sport ${PORTSUSER} --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    done
 
     # SSH authorizations
-    for x in ${SSHOK}
-            do
-                    ${IPT} -A INPUT -p tcp ! --syn --sport 22 -s ${x} -j ACCEPT
-            done
+    for x in ${SSHOK}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 22 -s ${x} -j ACCEPT
+    done
 
     # SMTP authorizations
-    for x in ${SMTPOK}
-        do
-            ${IPT} -A INPUT -p tcp ! --syn --sport 25 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-        done
+    for x in ${SMTPOK}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 25 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    done
 
     # secure SMTP (TCP/465 et TCP/587) authorizations
-    for x in ${SMTPSECUREOK}
-        do
-            ${IPT} -A INPUT -p tcp ! --syn --sport 465 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-            ${IPT} -A INPUT -p tcp ! --syn --sport 587 --dport ${PORTSUSER} -s ${x} -j ACCEPT
-        done
+    for x in ${SMTPSECUREOK}; do
+        ${IPT} -A INPUT -p tcp ! --syn --sport 465 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+        ${IPT} -A INPUT -p tcp ! --syn --sport 587 --dport ${PORTSUSER} -s ${x} -j ACCEPT
+    done
 
     # NTP authorizations
-    for x in ${NTPOK}
-            do
-                ${IPT} -A INPUT -p udp --sport 123 -s ${x} -j ACCEPT
-                ${IPT} -A OUTPUT -o ${INT} -p udp -d ${x} --dport 123 --match state --state NEW -j ACCEPT
-            done
+    for x in ${NTPOK}; do
+        ${IPT} -A INPUT -p udp --sport 123 -s ${x} -j ACCEPT
+        ${IPT} -A OUTPUT -o ${INT} -p udp -d ${x} --dport 123 --match state --state NEW -j ACCEPT
+    done
 
     # Always allow ICMP
     ${IPT} -A INPUT -p icmp -j ACCEPT
