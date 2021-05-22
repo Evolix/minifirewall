@@ -31,6 +31,8 @@
 DESC="minifirewall"
 NAME="minifirewall"
 
+set -u
+
 
 # Variables configuration
 #########################
@@ -52,6 +54,30 @@ PORTSROOT='0:1023'
 PORTSUSER='1024:65535'
 
 # Configuration
+
+INT=''
+IPV6=''
+DOCKER=''
+INTLAN=''
+TRUSTEDIPS=''
+PRIVILEGIEDIPS=''
+SERVICESTCP1p=''
+SERVICESUDP1p=''
+SERVICESTCP1=''
+SERVICESUDP1=''
+SERVICESTCP2=''
+SERVICESUDP2=''
+SERVICESTCP3=''
+SERVICESUDP3=''
+DNSSERVEURS=''
+HTTPSITES=''
+HTTPSSITES=''
+FTPSITES=''
+SSHOK=''
+SMTPOK=''
+SMTPSECUREOK=''
+NTPOK=''
+
 oldconfigfile="/etc/firewall.rc"
 configfile="/etc/default/minifirewall"
 includesdir="/etc/default/minifirewall.d"
