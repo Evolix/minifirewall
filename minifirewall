@@ -85,6 +85,7 @@ SSHOK=''
 SMTPOK=''
 SMTPSECUREOK=''
 NTPOK=''
+BACKUPSERVERS=''
 
 legacy_config_file="/etc/firewall.rc"
 config_file="/etc/default/minifirewall"
@@ -403,6 +404,18 @@ start() {
     for src in ${NTPOK}; do
         ${IPT} -A INPUT -p udp --sport 123 -s ${src} -j ACCEPT
         ${IPT} -A OUTPUT -o ${INT} -p udp -d ${src} --dport 123 --match state --state NEW -j ACCEPT
+    done
+
+    # Output for backup servers
+    for server in ${BACKUPSERVERS}; do
+        server_ip=$(echo "${server}" | cut -d ':' -f1)
+        server_port=$(echo "${server}" | cut -d ':' -f2)
+        if [ -n "${server_ip}" ] && [ -n "${server_port}" ]; then
+            ${IPT} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+        else
+            echo "Unrecognized syntax for BACKUPSERVERS '${server}\`. Use space-separated IP:PORT tuples." >&2
+            exit 1
+        fi
     done
 
     # Always allow ICMP
