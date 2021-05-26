@@ -88,7 +88,7 @@ NTPOK=''
 
 legacy_config_file="/etc/firewall.rc"
 config_file="/etc/default/minifirewall"
-includes_dir="/etc/default/minifirewall.d"
+includes_dir="/etc/minifirewall.d"
 
 IPV6=$(grep "IPV6=" "${config_file}" | awk -F '=' -F "'" '{print $2}')
 DOCKER=$(grep "DOCKER=" "${config_file}" | awk -F '='  -F "'" '{print $2}')
