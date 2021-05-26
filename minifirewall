@@ -85,6 +85,9 @@ SSHOK=''
 SMTPOK=''
 SMTPSECUREOK=''
 NTPOK=''
+PROXY=''
+PROXYBYPASS=''
+PROXYPORT=''
 BACKUPSERVERS=''
 
 legacy_config_file="/etc/firewall.rc"
@@ -100,6 +103,9 @@ is_ipv6_enabled() {
 }
 is_docker_enabled() {
     test "${DOCKER}" = "on"
+}
+is_proxy_enabled() {
+    test "${PROXY}" = "on"
 }
 chain_exists() {
     chain_name="$1"
@@ -405,6 +411,19 @@ start() {
         ${IPT} -A INPUT -p udp --sport 123 -s ${src} -j ACCEPT
         ${IPT} -A OUTPUT -o ${INT} -p udp -d ${src} --dport 123 --match state --state NEW -j ACCEPT
     done
+
+    # Proxy (Squid)
+    if is_proxy_enabled; then
+        ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -m owner --uid-owner proxy -j ACCEPT
+        if [ -n "${INTLAN}" ]; then
+            ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "${INTLAN}" -j ACCEPT
+        fi
+        ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "127.0.0.0/8" -j ACCEPT
+        for dstip in ${PROXYBYPASS}; do
+            ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "${dstip}" -j ACCEPT
+        done
+        ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -j REDIRECT --to-port "${PROXYPORT:-'8888'}"
+    fi
 
     # Output for backup servers
     for server in ${BACKUPSERVERS}; do
