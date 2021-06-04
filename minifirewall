@@ -415,10 +415,6 @@ start() {
     # Proxy (Squid)
     if is_proxy_enabled; then
         ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -m owner --uid-owner proxy -j ACCEPT
-        if [ -n "${INTLAN}" ]; then
-            ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "${INTLAN}" -j ACCEPT
-        fi
-        ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "127.0.0.0/8" -j ACCEPT
         for dstip in ${PROXYBYPASS}; do
             ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "${dstip}" -j ACCEPT
         done
