@@ -1,5 +1,0 @@
-# shellcheck shell=sh disable=SC2034
-# allow DNS output
-if [ "${IPV6}" != "off" ]; then
-    /sbin/ip6tables -A OUTPUT -o ${INT}  -p udp --dport 53 --match state --state NEW -j ACCEPT
-fi

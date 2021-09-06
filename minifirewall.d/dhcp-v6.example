@@ -1,6 +1,0 @@
-# shellcheck shell=sh disable=SC2034
-# allow DHCPv6
-if [ "${IPV6}" != "off" ]; then
-    /sbin/ip6tables -A INPUT -i ${INT}  -p udp --dport 546 -d fe80::/64 -j ACCEPT
-    /sbin/ip6tables -A OUTPUT -o ${INT}  -p udp --dport 547 -j ACCEPT
-fi
