@@ -109,6 +109,9 @@ is_docker_enabled() {
 is_proxy_enabled() {
     test "${PROXY}" = "on"
 }
+is_ipv6() {
+    grep -q ':' "$1"
+}
 chain_exists() {
     chain_name="$1"
     if [ $# -ge 2 ]; then
@@ -152,7 +155,6 @@ source_configuration() {
 }
 
 start() {
-    echo "${NAME} version ${VERSION}"
     echo "Start IPTables rules..."
 
     # Stop and warn if error!
@@ -484,7 +486,6 @@ start() {
 }
 
 stop() {
-    echo "${NAME} version ${VERSION}"
     echo "Flush all rules and accept everything..."
 
     # Delete all rules
@@ -545,7 +546,6 @@ stop() {
 }
 
 status() {
-    echo "${NAME} version ${VERSION}"
     ${IPT} -L -n -v --line-numbers
     ${IPT} -t nat -L -n -v --line-numbers
     ${IPT} -t mangle -L -n -v --line-numbers
@@ -554,7 +554,6 @@ status() {
 }
 
 reset() {
-    echo "${NAME} version ${VERSION}"
     echo "Reset all IPTables counters..."
 
     ${IPT} -Z
@@ -574,27 +573,33 @@ reset() {
 
 case "$1" in
     start)
+        echo "${NAME} version ${VERSION}"
         start
     ;;
 
     stop)
+        echo "${NAME} version ${VERSION}"
         stop
     ;;
 
     status)
+        echo "${NAME} version ${VERSION}"
         status
     ;;
 
     reset)
+        echo "${NAME} version ${VERSION}"
         reset
     ;;
 
     restart)
+        echo "${NAME} version ${VERSION}"
         stop
         start
     ;;
 
     *)
+        echo "${NAME} version ${VERSION}"
         echo "Usage: $0 {start|stop|restart|status|reset}"
         exit 1
 esac
