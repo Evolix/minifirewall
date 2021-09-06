@@ -1,3 +1,5 @@
 # shellcheck shell=sh disable=SC2034
 # allow traceroute output
-#/sbin/ip6tables -A OUTPUT -o $INT -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
+if [ "${IPV6}" != "off" ]; then
+    /sbin/ip6tables -A OUTPUT -o ${INT} -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
+fi

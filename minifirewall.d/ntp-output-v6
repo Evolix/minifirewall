@@ -1,3 +1,5 @@
 # shellcheck shell=sh disable=SC2034
 # allow NTP output
-/sbin/ip6tables -A OUTPUT -o $INT -p udp --dport 123 --match state --state NEW -j ACCEPT
+if [ "${IPV6}" != "off" ]; then
+    /sbin/ip6tables -A OUTPUT -o ${INT}  -p udp --dport 123 --match state --state NEW -j ACCEPT
+fi
