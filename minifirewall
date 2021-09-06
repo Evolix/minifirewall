@@ -28,6 +28,8 @@
 # Description:       Firewall designed for standalone server
 ### END INIT INFO
 
+VERSION="21.09"
+
 DESC="minifirewall"
 NAME="minifirewall"
 
@@ -150,7 +152,8 @@ source_configuration() {
 }
 
 start() {
-     echo "Start IPTables rules..."
+    echo "${NAME} version ${VERSION}"
+    echo "Start IPTables rules..."
 
     # Stop and warn if error!
     set -e
@@ -481,6 +484,7 @@ start() {
 }
 
 stop() {
+    echo "${NAME} version ${VERSION}"
     echo "Flush all rules and accept everything..."
 
     # Delete all rules
@@ -541,6 +545,7 @@ stop() {
 }
 
 status() {
+    echo "${NAME} version ${VERSION}"
     ${IPT} -L -n -v --line-numbers
     ${IPT} -t nat -L -n -v --line-numbers
     ${IPT} -t mangle -L -n -v --line-numbers
@@ -549,6 +554,7 @@ status() {
 }
 
 reset() {
+    echo "${NAME} version ${VERSION}"
     echo "Reset all IPTables counters..."
 
     ${IPT} -Z
@@ -588,10 +594,9 @@ case "$1" in
         start
     ;;
 
-  *)
-
-    echo "Usage: $0 {start|stop|restart|status|reset}"
-    exit 1
+    *)
+        echo "Usage: $0 {start|stop|restart|status|reset}"
+        exit 1
 esac
 
 exit 0
