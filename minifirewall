@@ -435,110 +435,110 @@ start() {
     ###################
 
     # DNS authorizations
-    for src in ${DNSSERVEURS}; do
-        if is_ipv6 ${src}; then
+    for IP in ${DNSSERVEURS}; do
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
-                ${IPT6} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${src} -j ACCEPT
-                ${IPT6} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${src} -m state --state ESTABLISHED,RELATED -j ACCEPT
-                ${IPT6} -A OUTPUT -o ${INT} -p udp -d ${src} --dport 53 --match state --state NEW -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
+                ${IPT6} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${IP} -m state --state ESTABLISHED,RELATED -j ACCEPT
+                ${IPT6} -A OUTPUT -o ${INT} -p udp -d ${IP} --dport 53 --match state --state NEW -j ACCEPT
             fi
         else 
-            ${IPT} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${src} -j ACCEPT
-            ${IPT} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${src} -m state --state ESTABLISHED,RELATED -j ACCEPT
-            ${IPT} -A OUTPUT -o ${INT} -p udp -d ${src} --dport 53 --match state --state NEW -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
+            ${IPT} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${IP} -m state --state ESTABLISHED,RELATED -j ACCEPT
+            ${IPT} -A OUTPUT -o ${INT} -p udp -d ${IP} --dport 53 --match state --state NEW -j ACCEPT
         fi
     done
 
     # HTTP (TCP/80) authorizations
-    for src in ${HTTPSITES}; do
-        if is_ipv6 ${src}; then
+    for IP in ${HTTPSITES}; do
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
-                ${IPT6} -A INPUT -p tcp ! --syn --sport 80 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport 80 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
             fi
         else 
-            ${IPT} -A INPUT -p tcp ! --syn --sport 80 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport 80 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
         fi
     done
 
     # HTTPS (TCP/443) authorizations
-    for src in ${HTTPSSITES}; do
-        if is_ipv6 ${src}; then
+    for IP in ${HTTPSSITES}; do
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
-                ${IPT6} -A INPUT -p tcp ! --syn --sport 443 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport 443 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
             fi
         else 
-            ${IPT} -A INPUT -p tcp ! --syn --sport 443 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport 443 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
         fi
     done
 
     # FTP (so complex protocol...) authorizations
-    for src in ${FTPSITES}; do
-        if is_ipv6 ${src}; then
+    for IP in ${FTPSITES}; do
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
                 # requests on Control connection
-                ${IPT6} -A INPUT -p tcp ! --syn --sport 21 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport 21 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
                 # FTP port-mode on Data Connection
-                ${IPT6} -A INPUT -p tcp --sport 20 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp --sport 20 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
                 # FTP passive-mode on Data Connection
                 # WARNING, this allow all connections on TCP ports > 1024
-                ${IPT6} -A INPUT -p tcp ! --syn --sport ${PORTSUSER} --dport ${PORTSUSER} -s ${src} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport ${PORTSUSER} --dport ${PORTSUSER} -s ${IP} -j ACCEPT
             fi
         else 
             # requests on Control connection
-            ${IPT} -A INPUT -p tcp ! --syn --sport 21 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport 21 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
             # FTP port-mode on Data Connection
-            ${IPT} -A INPUT -p tcp --sport 20 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+            ${IPT} -A INPUT -p tcp --sport 20 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
             # FTP passive-mode on Data Connection
             # WARNING, this allow all connections on TCP ports > 1024
-            ${IPT} -A INPUT -p tcp ! --syn --sport ${PORTSUSER} --dport ${PORTSUSER} -s ${src} -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport ${PORTSUSER} --dport ${PORTSUSER} -s ${IP} -j ACCEPT
         fi
     done
 
     # SSH authorizations
-    for src in ${SSHOK}; do
-        if is_ipv6 ${src}; then
+    for IP in ${SSHOK}; do
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
-                ${IPT6} -A INPUT -p tcp ! --syn --sport 22 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport 22 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
             fi
         else 
-            ${IPT} -A INPUT -p tcp ! --syn --sport 22 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport 22 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
         fi
     done
 
     # SMTP authorizations
-    for src in ${SMTPOK}; do
-        if is_ipv6 ${src}; then
+    for IP in ${SMTPOK}; do
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
-                ${IPT6} -A INPUT -p tcp ! --syn --sport 25 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport 25 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
             fi
         else 
-            ${IPT} -A INPUT -p tcp ! --syn --sport 25 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport 25 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
         fi
     done
 
     # secure SMTP (TCP/465 et TCP/587) authorizations
-    for src in ${SMTPSECUREOK}; do
-        if is_ipv6 ${src}; then
+    for IP in ${SMTPSECUREOK}; do
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
-                ${IPT6} -A INPUT -p tcp ! --syn --sport 465 --dport ${PORTSUSER} -s ${src} -j ACCEPT
-                ${IPT6} -A INPUT -p tcp ! --syn --sport 587 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport 465 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
+                ${IPT6} -A INPUT -p tcp ! --syn --sport 587 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
             fi
         else 
-            ${IPT} -A INPUT -p tcp ! --syn --sport 465 --dport ${PORTSUSER} -s ${src} -j ACCEPT
-            ${IPT} -A INPUT -p tcp ! --syn --sport 587 --dport ${PORTSUSER} -s ${src} -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport 465 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
+            ${IPT} -A INPUT -p tcp ! --syn --sport 587 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
         fi
     done
 
     # NTP authorizations
-    for src in ${NTPOK}; do
-        if is_ipv6 ${src}; then
+    for IP in ${NTPOK}; do
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
-                ${IPT6} -A INPUT -p udp --sport 123 -s ${src} -j ACCEPT
-                ${IPT6} -A OUTPUT -o ${INT} -p udp -d ${src} --dport 123 --match state --state NEW -j ACCEPT
+                ${IPT6} -A INPUT -p udp --sport 123 -s ${IP} -j ACCEPT
+                ${IPT6} -A OUTPUT -o ${INT} -p udp -d ${IP} --dport 123 --match state --state NEW -j ACCEPT
             fi
         else 
-            ${IPT} -A INPUT -p udp --sport 123 -s ${src} -j ACCEPT
-            ${IPT} -A OUTPUT -o ${INT} -p udp -d ${src} --dport 123 --match state --state NEW -j ACCEPT
+            ${IPT} -A INPUT -p udp --sport 123 -s ${IP} -j ACCEPT
+            ${IPT} -A OUTPUT -o ${INT} -p udp -d ${IP} --dport 123 --match state --state NEW -j ACCEPT
         fi
     done
 
