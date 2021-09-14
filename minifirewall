@@ -35,9 +35,12 @@ NAME="minifirewall"
 
 set -u
 
-
 # Variables configuration
 #########################
+
+legacy_config_file="/etc/firewall.rc"
+config_file="/etc/default/minifirewall"
+includes_dir="/etc/minifirewall.d"
 
 # iptables paths
 IPT=$(command -v iptables)
@@ -92,14 +95,6 @@ PROXYBYPASS=''
 PROXYPORT=''
 BACKUPSERVERS=''
 
-legacy_config_file="/etc/firewall.rc"
-config_file="/etc/default/minifirewall"
-includes_dir="/etc/minifirewall.d"
-
-IPV6=$(grep "IPV6=" "${config_file}" | awk -F '=' -F "'" '{print $2}')
-DOCKER=$(grep "DOCKER=" "${config_file}" | awk -F '='  -F "'" '{print $2}')
-INT=$(grep "INT=" "${config_file}" | awk -F '='  -F "'" '{print $2}')
-
 is_ipv6_enabled() {
     test "${IPV6}" != "off"
 }
@@ -135,7 +130,7 @@ source_file_or_error() {
 }
 source_configuration() {
     if test -f ${legacy_config_file}; then
-        echo "${legacy_config_file} is deprecated, rename to ${config_file}" >&2
+        echo "${legacy_config_file} is deprecated. Rename it to ${config_file}" >&2
         exit 1
     fi
 
@@ -144,10 +139,17 @@ source_configuration() {
         exit 1
     fi
 
-    source_file_or_error ${config_file}
+    if grep -e iptables -e ip6tables "${config_file}" | grep -qvE "^#"; then
+        echo "iptables/ip6tables commands found in ${config_file}." >&2
+        echo "Move them in included files (in ${includes_dir})." >&2
+        exit 1
+    fi
 
+    source_file_or_error ${config_file}
+}
+source_includes() {
     if [ -d "${includes_dir}" ]; then
-        include_files=$(find ${includes_dir} -type f -readable -not -name '*.*' | sort)
+        include_files=$(find ${includes_dir} -type f -readable -not -name '*.*' | sort -h)
         for include_file in ${include_files}; do
             source_file_or_error "${include_file}"
         done
@@ -160,7 +162,6 @@ start() {
     # Stop and warn if error!
     set -e
     trap 'echo "ERROR in minifirewall configuration (fix it now!) or script manipulation (fix yourself)." ' INT TERM EXIT
-
 
     # sysctl network security settings
     ##################################
@@ -216,8 +217,6 @@ start() {
         ${IPT6} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
         ${IPT6} -A LOG_ACCEPT -j ACCEPT
     fi
-
-    source_configuration
 
     # Trusted ip addresses
     ${IPT} -N ONLYTRUSTED
@@ -616,6 +615,9 @@ start() {
         ${IPT6} -A OUTPUT -p udp -j DROP
     fi
 
+    # Source files present in optional directory
+    source_includes
+
     trap - INT TERM EXIT
 
     echo "...starting IPTables rules is now finish : OK"
@@ -726,37 +728,35 @@ reset() {
     echo "...reseting IPTables counters is now finish : OK"
 }
 
-case "$1" in
+echo "${NAME} version ${VERSION}"
+source_configuration
+
+case "${1:-''}" in
     start)
-        echo "${NAME} version ${VERSION}"
         start
     ;;
 
     stop)
-        echo "${NAME} version ${VERSION}"
         stop
     ;;
 
     status)
-        echo "${NAME} version ${VERSION}"
         status
     ;;
 
     reset)
-        echo "${NAME} version ${VERSION}"
         reset
     ;;
 
     restart)
-        echo "${NAME} version ${VERSION}"
         stop
         start
     ;;
 
     *)
-        echo "${NAME} version ${VERSION}"
-        echo "Usage: $0 {start|stop|restart|status|reset}"
+        echo "Usage: $0 {start|stop|restart|status|reset}" 
         exit 1
+    ;;
 esac
 
 exit 0
