@@ -110,7 +110,7 @@ is_proxy_enabled() {
     test "${PROXY}" = "on"
 }
 is_ipv6() {
-    grep -q ':' "$1"
+    echo "$1" | grep -q ':' 
 }
 chain_exists() {
     chain_name="$1"
