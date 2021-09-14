@@ -147,7 +147,7 @@ source_configuration() {
     source_file_or_error ${config_file}
 
     if [ -d "${includes_dir}" ]; then
-        include_files=$(find ${includes_dir} -type f -readable -not -name '*.*')
+        include_files=$(find ${includes_dir} -type f -readable -not -name '*.*' | sort)
         for include_file in ${include_files}; do
             source_file_or_error "${include_file}"
         done
