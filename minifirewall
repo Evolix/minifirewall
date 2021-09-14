@@ -208,6 +208,14 @@ start() {
     ${IPT} -N LOG_ACCEPT
     ${IPT} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
     ${IPT} -A LOG_ACCEPT -j ACCEPT
+    if is_ipv6_enabled; then
+        ${IPT6} -N LOG_DROP
+        ${IPT6} -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
+        ${IPT6} -A LOG_DROP -j DROP
+        ${IPT6} -N LOG_ACCEPT
+        ${IPT6} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
+        ${IPT6} -A LOG_ACCEPT -j ACCEPT
+    fi
 
     source_configuration
 
@@ -219,7 +227,7 @@ start() {
         ${IPT6} -A ONLYTRUSTED -j LOG_DROP
     fi
     for ip in ${TRUSTEDIPS}; do
-        if is_ipv6 ${src}; then
+        if is_ipv6 ${ip}; then
             if is_ipv6_enabled; then
                 ${IPT6} -I ONLYTRUSTED -s ${ip} -j ACCEPT
             fi
@@ -237,7 +245,7 @@ start() {
         ${IPT6} -A ONLYPRIVILEGIED -j ONLYTRUSTED
     fi
     for ip in ${PRIVILEGIEDIPS}; do
-        if is_ipv6 ${src}; then
+        if is_ipv6 ${ip}; then
             if is_ipv6_enabled; then
                 ${IPT6} -I ONLYPRIVILEGIED -s ${ip} -j ACCEPT
             fi
@@ -267,7 +275,7 @@ start() {
     # attacked windowsupdate.com and DNS was changed to 127.0.0.1
     # ${IPT} -t NAT -I PREROUTING -s ${LOOPBACK} -i ! lo -j DROP
     for IP in ${LOOPBACK}; do
-        if is_ipv6 ${src}; then
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
                 ${IPT6} -A INPUT -s ${IP} ! -i lo -j DROP
             fi
@@ -307,7 +315,7 @@ start() {
 
     # Allow services for ${INTLAN} (local server or local network)
     for IP in ${INTLAN}; do
-        if is_ipv6 ${src}; then
+        if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
                 ${IPT6} -A INPUT -s ${IP} -j ACCEPT
             fi
@@ -524,7 +532,6 @@ start() {
 
     # NTP authorizations
     for src in ${NTPOK}; do
-
         if is_ipv6 ${src}; then
             if is_ipv6_enabled; then
                 ${IPT6} -A INPUT -p udp --sport 123 -s ${src} -j ACCEPT
@@ -550,8 +557,9 @@ start() {
 
     # Output for backup servers
     for server in ${BACKUPSERVERS}; do
-        server_port=$(echo "${server}" | awk '{print $NF}')
+        server_port=$(echo "${server}" | awk -F : '{print $(NF)}')
         server_ip=$(echo "${server}" | sed -e "s/:${server_port}$//")
+
         if [ -n "${server_ip}" ] && [ -n "${server_port}" ]; then
             if is_ipv6 ${server_ip}; then
                 if is_ipv6_enabled; then
