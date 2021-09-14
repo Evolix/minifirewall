@@ -214,20 +214,43 @@ start() {
     # Trusted ip addresses
     ${IPT} -N ONLYTRUSTED
     ${IPT} -A ONLYTRUSTED -j LOG_DROP
+    if is_ipv6_enabled; then
+        ${IPT6} -N ONLYTRUSTED
+        ${IPT6} -A ONLYTRUSTED -j LOG_DROP
+    fi
     for ip in ${TRUSTEDIPS}; do
-        ${IPT} -I ONLYTRUSTED -s ${ip} -j ACCEPT
+        if is_ipv6 ${src}; then
+            if is_ipv6_enabled; then
+                ${IPT6} -I ONLYTRUSTED -s ${ip} -j ACCEPT
+            fi
+        else
+            ${IPT} -I ONLYTRUSTED -s ${ip} -j ACCEPT
+        fi
     done
 
     # Privilegied ip addresses
     # (trusted ip addresses *are* privilegied)
     ${IPT} -N ONLYPRIVILEGIED
     ${IPT} -A ONLYPRIVILEGIED -j ONLYTRUSTED
+    if is_ipv6_enabled; then
+        ${IPT6} -N ONLYPRIVILEGIED
+        ${IPT6} -A ONLYPRIVILEGIED -j ONLYTRUSTED
+    fi
     for ip in ${PRIVILEGIEDIPS}; do
-        ${IPT} -I ONLYPRIVILEGIED -s ${ip} -j ACCEPT
+        if is_ipv6 ${src}; then
+            if is_ipv6_enabled; then
+                ${IPT6} -I ONLYPRIVILEGIED -s ${ip} -j ACCEPT
+            fi
+        else
+            ${IPT} -I ONLYPRIVILEGIED -s ${ip} -j ACCEPT
+        fi
     done
 
     # Chain for restrictions (blacklist IPs/ranges)
     ${IPT} -N NEEDRESTRICT
+    if is_ipv6_enabled; then
+        ${IPT6} -N NEEDRESTRICT
+    fi
 
     # We allow all on loopback interface
     ${IPT} -A INPUT -i lo -j ACCEPT
@@ -243,9 +266,18 @@ start() {
     # We avoid "martians" packets, typical when W32/Blaster virus
     # attacked windowsupdate.com and DNS was changed to 127.0.0.1
     # ${IPT} -t NAT -I PREROUTING -s ${LOOPBACK} -i ! lo -j DROP
-    ${IPT} -A INPUT -s ${LOOPBACK} ! -i lo -j DROP
+    for IP in ${LOOPBACK}; do
+        if is_ipv6 ${src}; then
+            if is_ipv6_enabled; then
+                ${IPT6} -A INPUT -s ${IP} ! -i lo -j DROP
+            fi
+        else
+            ${IPT} -A INPUT -s ${IP} ! -i lo -j DROP
+        fi
+    done
 
     if is_docker_enabled; then
+        # WARN: IPv6 not yet supported for Docker rules
         ${IPT} -N MINIFW-DOCKER-TRUSTED
         ${IPT} -A MINIFW-DOCKER-TRUSTED -j DROP
 
@@ -274,15 +306,29 @@ start() {
     #############################
 
     # Allow services for ${INTLAN} (local server or local network)
-    ${IPT} -A INPUT -s ${INTLAN} -j ACCEPT
+    for IP in ${INTLAN}; do
+        if is_ipv6 ${src}; then
+            if is_ipv6_enabled; then
+                ${IPT6} -A INPUT -s ${IP} -j ACCEPT
+            fi
+        else
+            ${IPT} -A INPUT -s ${IP} -j ACCEPT
+        fi
+    done
 
     # Enable protection chain for sensible services
     for port in ${SERVICESTCP1p}; do
         ${IPT} -A INPUT -p tcp --dport ${port} -j NEEDRESTRICT
+        if is_ipv6_enabled; then
+            ${IPT6} -A INPUT -p tcp --dport ${port} -j NEEDRESTRICT
+        fi
     done
 
     for port in ${SERVICESUDP1p}; do
         ${IPT} -A INPUT -p udp --dport ${port} -j NEEDRESTRICT
+        if is_ipv6_enabled; then
+            ${IPT6} -A INPUT -p udp --dport ${port} -j NEEDRESTRICT
+        fi
     done
 
     # Public service
@@ -303,23 +349,37 @@ start() {
     # Privilegied services
     for port in ${SERVICESTCP2}; do
         ${IPT} -A INPUT -p tcp --dport ${port} -j ONLYPRIVILEGIED
+        if is_ipv6_enabled; then
+            ${IPT6} -A INPUT -p tcp --dport ${port} -j ONLYPRIVILEGIED
+        fi
     done
 
     for port in ${SERVICESUDP2}; do
         ${IPT} -A INPUT -p udp --dport ${port} -j ONLYPRIVILEGIED
+        if is_ipv6_enabled; then
+            ${IPT6} -A INPUT -p udp --dport ${port} -j ONLYPRIVILEGIED
+        fi
     done
 
     # Private services
     for port in ${SERVICESTCP3}; do
         ${IPT} -A INPUT -p tcp --dport ${port} -j ONLYTRUSTED
+        if is_ipv6_enabled; then
+            ${IPT6} -A INPUT -p tcp --dport ${port} -j ONLYTRUSTED
+        fi
     done
 
     for port in ${SERVICESUDP3}; do
         ${IPT} -A INPUT -p udp --dport ${port} -j ONLYTRUSTED
+        if is_ipv6_enabled; then
+            ${IPT6} -A INPUT -p udp --dport ${port} -j ONLYTRUSTED
+        fi
     done
 
 
     if is_docker_enabled; then
+        # WARN: IPv6 not yet supported
+
         # Public services defined in SERVICESTCP1 & SERVICESUDP1
         for dstport in ${SERVICESTCP1}; do
             ${IPT} -I MINIFW-DOCKER-PUB -p tcp --dport "${dstport}" -j RETURN
@@ -478,6 +538,9 @@ start() {
 
     # Proxy (Squid)
     if is_proxy_enabled; then
+        # WARN: Squid only listen on IPv4 yet
+        # TODO: verify that the pattern used for IPv4 is relevant with IPv6
+
         ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -m owner --uid-owner proxy -j ACCEPT
         for dstip in ${PROXYBYPASS}; do
             ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "${dstip}" -j ACCEPT
@@ -487,10 +550,16 @@ start() {
 
     # Output for backup servers
     for server in ${BACKUPSERVERS}; do
-        server_ip=$(echo "${server}" | cut -d ':' -f1)
-        server_port=$(echo "${server}" | cut -d ':' -f2)
+        server_port=$(echo "${server}" | awk '{print $NF}')
+        server_ip=$(echo "${server}" | sed -e "s/:${server_port}$//")
         if [ -n "${server_ip}" ] && [ -n "${server_port}" ]; then
-            ${IPT} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+            if is_ipv6 ${server_ip}; then
+                if is_ipv6_enabled; then
+                    ${IPT6} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+                fi
+            else 
+                ${IPT} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+            fi
         else
             echo "Unrecognized syntax for BACKUPSERVERS '${server}\`. Use space-separated IP:PORT tuples." >&2
             exit 1
@@ -552,7 +621,7 @@ stop() {
     if is_ipv6_enabled; then
         ${IPT6} -F INPUT
     fi
-    
+
     ${IPT} -F OUTPUT
     if is_ipv6_enabled; then
         ${IPT6} -F OUTPUT
@@ -563,10 +632,22 @@ stop() {
     ${IPT} -F ONLYTRUSTED
     ${IPT} -F ONLYPRIVILEGIED
     ${IPT} -F NEEDRESTRICT
- 
+    if is_ipv6_enabled; then
+        ${IPT6} -F LOG_DROP
+        ${IPT6} -F LOG_ACCEPT
+        ${IPT6} -F ONLYTRUSTED
+        ${IPT6} -F ONLYPRIVILEGIED
+        ${IPT6} -F NEEDRESTRICT
+    fi
+
     ${IPT} -t mangle -F
+    if is_ipv6_enabled; then
+        ${IPT6} -t mangle -F
+    fi
 
     if is_docker_enabled; then
+        # WARN: IPv6 not yet supported
+
         ${IPT} -F DOCKER-USER
         ${IPT} -A DOCKER-USER -j RETURN
 
@@ -600,6 +681,13 @@ stop() {
     ${IPT} -X ONLYPRIVILEGIED
     ${IPT} -X ONLYTRUSTED
     ${IPT} -X NEEDRESTRICT
+    if is_ipv6_enabled; then
+        ${IPT6} -X LOG_DROP
+        ${IPT6} -X LOG_ACCEPT
+        ${IPT6} -X ONLYPRIVILEGIED
+        ${IPT6} -X ONLYTRUSTED
+        ${IPT6} -X NEEDRESTRICT
+    fi
 
     echo "...flushing IPTables rules is now finish : OK"
 }
