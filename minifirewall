@@ -549,7 +549,9 @@ start() {
 
         ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -m owner --uid-owner proxy -j ACCEPT
         for dstip in ${PROXYBYPASS}; do
-            ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "${dstip}" -j ACCEPT
+            if ! is_ipv6 ${dstip}; then
+                ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -d "${dstip}" -j ACCEPT
+            fi
         done
         ${IPT} -t nat -A OUTPUT -p tcp --dport 80 -j REDIRECT --to-port "${PROXYPORT:-'8888'}"
     fi
