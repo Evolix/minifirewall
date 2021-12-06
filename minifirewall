@@ -28,7 +28,7 @@
 # Description:       Firewall designed for standalone server
 ### END INIT INFO
 
-VERSION="21.09"
+VERSION="21.12"
 
 DESC="minifirewall"
 NAME="minifirewall"
