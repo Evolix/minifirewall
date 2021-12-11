@@ -38,7 +38,6 @@ set -u
 # Variables configuration
 #########################
 
-legacy_config_file="/etc/firewall.rc"
 config_file="/etc/default/minifirewall"
 includes_dir="/etc/minifirewall.d"
 
@@ -95,6 +94,8 @@ PROXYBYPASS=''
 PROXYPORT=''
 BACKUPSERVERS=''
 
+LEGACY_CONFIG='off'
+
 is_ipv6_enabled() {
     test "${IPV6}" != "off"
 }
@@ -106,6 +107,9 @@ is_proxy_enabled() {
 }
 is_ipv6() {
     echo "$1" | grep -q ':' 
+}
+is_legacy_config() {
+    test "${LEGACY_CONFIG}" != "off"
 }
 chain_exists() {
     chain_name="$1"
@@ -121,6 +125,7 @@ source_file_or_error() {
 
     tmpfile=$(mktemp --tmpdir=/tmp minifirewall.XXX)
     . "${file}" 2>"${tmpfile}" >&2
+
     if [ -s "${tmpfile}" ]; then
             echo "${file} returns standard or error output (see below). Stopping." >&2
             cat "${tmpfile}"
@@ -129,23 +134,37 @@ source_file_or_error() {
     rm "${tmpfile}"
 }
 source_configuration() {
-    if test -f ${legacy_config_file}; then
-        echo "${legacy_config_file} is deprecated. Rename it to ${config_file}" >&2
-        exit 1
-    fi
-
     if ! test -f ${config_file}; then
         echo "${config_file} does not exist" >&2
+
+        old_config_file="/etc/firewall.rc"
+        if test -f ${old_config_file}; then
+            echo "${old_config_file} is deprecated. Rename it to ${config_file}" >&2
+        fi
+
         exit 1
     fi
 
-    if grep -e iptables -e ip6tables "${config_file}" | grep -qvE "^#"; then
-        echo "iptables/ip6tables commands found in ${config_file}." >&2
-        echo "Move them in included files (in ${includes_dir})." >&2
-        exit 1
+    if grep -e "iptables" -e "ip6tables" "${config_file}" | grep -qvE "^#"; then
+        ## Backward compatible mode
+        echo "Legacy config detected"
+        LEGACY_CONFIG='on'
+
+        ## Non-backward compatible mode
+        # echo "iptables/ip6tables commands found in ${config_file}." >&2
+        # echo "Move them in included files (in ${includes_dir})." >&2
+        # exit 1
     fi
 
-    source_file_or_error ${config_file}
+    if is_legacy_config; then
+        tmp_config_file=$(mktemp --tmpdir=/tmp minifirewall.XXX)
+        grep -E "^\s*[_a-zA-Z0-9]+=" "${config_file}" > "${tmp_config_file}"
+
+        source_file_or_error "${tmp_config_file}"
+        rm "${tmp_config_file}"
+    else
+        source_file_or_error "${config_file}"
+    fi
 }
 source_includes() {
     if [ -d "${includes_dir}" ]; then
@@ -601,12 +620,12 @@ start() {
     if is_ipv6_enabled; then
         ${IPT6} -P OUTPUT ACCEPT
     fi
-    
+
     ${IPT} -A OUTPUT -o ${INT} -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
     if is_ipv6_enabled; then
         ${IPT6} -A OUTPUT -o ${INT} -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
     fi
-    
+
     ${IPT} -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
     if is_ipv6_enabled; then
         ${IPT6} -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
@@ -615,6 +634,10 @@ start() {
     ${IPT} -A OUTPUT -p udp -j DROP
     if is_ipv6_enabled; then
         ${IPT6} -A OUTPUT -p udp -j DROP
+    fi
+
+    if is_legacy_config; then
+        source_file_or_error "${config_file}"
     fi
 
     # Source files present in optional directory
