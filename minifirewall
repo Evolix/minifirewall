@@ -137,6 +137,8 @@ source_configuration() {
     if ! test -f ${config_file}; then
         echo "${config_file} does not exist" >&2
 
+        ## We still want to deal with this really old configuration file
+        ## even if it has been deprecated since Debian 8
         old_config_file="/etc/firewall.rc"
         if test -f ${old_config_file}; then
             echo "${old_config_file} is deprecated. Rename it to ${config_file}" >&2
@@ -146,17 +148,30 @@ source_configuration() {
     fi
 
     if grep -e "iptables" -e "ip6tables" "${config_file}" | grep -qvE "^#"; then
-        ## Backward compatible mode
+        # Backward compatible mode
+        ###########################
+
         echo "Legacy config detected"
         LEGACY_CONFIG='on'
 
-        ## Non-backward compatible mode
+        # Non-backward compatible mode
+        ###############################
+
+        # If we ever want to remove the backward compatible mode
+        # we can remove the two lines above and uncomment the lines below.
+        # They break if any iptables/ip6tables command is found in the configuration file
+
         # echo "iptables/ip6tables commands found in ${config_file}." >&2
         # echo "Move them in included files (in ${includes_dir})." >&2
         # exit 1
     fi
 
     if is_legacy_config; then
+        # In this mode, we extract all variable definitions
+        # to a temporary file that we can source.
+        # It allow iptables/ip6tables commands to remain in the configuration file
+        # and not interfere with the configuration step.
+
         tmp_config_file=$(mktemp --tmpdir=/tmp minifirewall.XXX)
         grep -E "^\s*[_a-zA-Z0-9]+=" "${config_file}" > "${tmp_config_file}"
 
