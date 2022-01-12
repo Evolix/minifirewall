@@ -26,6 +26,15 @@ Edit /etc/default/minifirewall file:
 * Configure your authorizations for external services : DNS, HTTP, HTTPS, SMTP, SSH, NTP
 * Add your specific rules
 
+### Docker
+
+To use minifirewall with docker you need to change the variable *DOCKER* from _off_ to _on_
+Then, authorisation for public/semi-public/private ports will also work for dockerized services
+
+
+**WARNING** : When the port mapping on the host is different than in the container (ie: listen on :8090 on the host, but the service in the container listen on :8080)
+you need to use the port used by the container (ie: 8080) in the public/semi-public/private port list
+
 ## Usage
 
 ~~~
