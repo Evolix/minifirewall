@@ -4,7 +4,7 @@
 # we used netfilter/iptables http://netfilter.org/ designed for recent Linux kernel
 # See https://gitea.evolix.org/evolix/minifirewall
 
-# Copyright (c) 2007-2021 Evolix
+# Copyright (c) 2007-2022 Evolix
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
@@ -17,7 +17,7 @@
 #
 
 ### BEGIN INIT INFO
-# Provides:          minfirewall
+# Provides:          minifirewall
 # Required-Start:
 # Required-Stop:
 # Should-Start:      $network $syslog $named
@@ -28,7 +28,7 @@
 # Description:       Firewall designed for standalone server
 ### END INIT INFO
 
-VERSION="21.12"
+VERSION="22.03"
 
 DESC="minifirewall"
 NAME="minifirewall"
