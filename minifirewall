@@ -200,39 +200,82 @@ start() {
     # sysctl network security settings
     ##################################
 
-    # Don't answer to broadcast pings
-    echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
-
-    # Ignore bogus ICMP responses
-    echo 1 > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
-
-    # Disable Source Routing
-    for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_source_route; do
-        echo 0 > "${proc_sys_file}"
-    done
-
-    # Enable TCP SYN cookies to avoid TCP-SYN-FLOOD attacks
+    # Set 1 to ignore broadcast pings (default)
+    : "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS:='1'}"
+    # Set 1 to ignore bogus ICMP responses (default)
+    : "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES:='1'}"
+    # Set 0 to disable source routing (default)
+    : "${SYSCTL_ACCEPT_SOURCE_ROUTE:='0'}"
+    # Set 1 to enable TCP SYN cookies (default)
     # cf http://cr.yp.to/syncookies.html
-    echo 1 > /proc/sys/net/ipv4/tcp_syncookies
+    : "${SYSCTL_TCP_SYNCOOKIES:='1'}"
+    # Set 0 to disable ICMP redirects (default)
+    : "${SYSCTL_ICMP_REDIRECTS:='0'}"
+    # Set 1 to enable Reverse Path filtering (default)
+    # Set 0 if VRRP is used
+    : "${SYSCTL_RP_FILTER:='1'}"
+    # Set 1 to log packets with inconsistent address (default)
+    : "${SYSCTL_LOG_MARTIANS:='1'}"
 
-    # Disable ICMP redirects
-    for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_redirects; do
-        echo 0 > "${proc_sys_file}"
-    done
+    if [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "1" ] || [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "0" ]; then
+        echo "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+    else
+        echo "Invalid SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS value '${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}', must be '0' or '1'." >&2
+        exit 1
+    fi
 
-    for proc_sys_file in /proc/sys/net/ipv4/conf/*/send_redirects; do
-        echo 0 > "${proc_sys_file}"
-    done
+    if [ "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" = "1" ] || [ "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" = "0" ]; then
+        echo "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
+    else
+        echo "Invalid SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES value '${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}', must be '0' or '1'." >&2
+        exit 1
+    fi
 
-    # Enable Reverse Path filtering : verify if responses use same network interface
-    for proc_sys_file in /proc/sys/net/ipv4/conf/*/rp_filter; do
-        echo 1 > "${proc_sys_file}"
-    done
+    if [ "${SYSCTL_ACCEPT_SOURCE_ROUTE}" = "1" ] || [ "${SYSCTL_ACCEPT_SOURCE_ROUTE}" = "0" ]; then
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_source_route; do
+            echo "${SYSCTL_ACCEPT_SOURCE_ROUTE}" = > "${proc_sys_file}"
+        done
+    else
+        echo "Invalid SYSCTL_ACCEPT_SOURCE_ROUTE value '${SYSCTL_ACCEPT_SOURCE_ROUTE}', must be '0' or '1'." >&2
+        exit 1
+    fi
 
-    # log des paquets avec adresse incoherente
-    for proc_sys_file in /proc/sys/net/ipv4/conf/*/log_martians; do
-        echo 1 > "${proc_sys_file}"
-    done
+    if [ "${SYSCTL_TCP_SYNCOOKIES}" = "1" ] || [ "${SYSCTL_TCP_SYNCOOKIES}" = "0" ]; then
+        echo "${SYSCTL_TCP_SYNCOOKIES}" > /proc/sys/net/ipv4/tcp_syncookies
+    else
+        echo "Invalid SYSCTL_TCP_SYNCOOKIES value '${SYSCTL_TCP_SYNCOOKIES}', must be '0' or '1'." >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_ICMP_REDIRECTS}" = "1" ] || [ "${SYSCTL_ICMP_REDIRECTS}" = "0" ]; then
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_redirects; do
+            echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
+        done
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/send_redirects; do
+            echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
+        done
+    else
+        echo "Invalid SYSCTL_ICMP_REDIRECTS value '${SYSCTL_ICMP_REDIRECTS}', must be '0' or '1'." >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_RP_FILTER}" = "1" ] || [ "${SYSCTL_RP_FILTER}" = "0" ]; then
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/rp_filter; do
+            echo "${SYSCTL_RP_FILTER}" > "${proc_sys_file}"
+        done
+    else
+        echo "Invalid SYSCTL_RP_FILTER value '${SYSCTL_RP_FILTER}', must be '0' or '1'." >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_LOG_MARTIANS}" = "1" ] || [ "${SYSCTL_LOG_MARTIANS}" = "0" ]; then
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/log_martians; do
+            echo "${SYSCTL_LOG_MARTIANS}" > "${proc_sys_file}"
+        done
+    else
+        echo "Invalid SYSCTL_LOG_MARTIANS value '${SYSCTL_LOG_MARTIANS}', must be '0' or '1'." >&2
+        exit 1
+    fi
 
     # IPTables configuration
     ########################
