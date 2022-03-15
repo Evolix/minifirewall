@@ -201,21 +201,21 @@ start() {
     ##################################
 
     # Set 1 to ignore broadcast pings (default)
-    : "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS:='1'}"
+    : "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS:=1}"
     # Set 1 to ignore bogus ICMP responses (default)
-    : "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES:='1'}"
+    : "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES:=1}"
     # Set 0 to disable source routing (default)
-    : "${SYSCTL_ACCEPT_SOURCE_ROUTE:='0'}"
+    : "${SYSCTL_ACCEPT_SOURCE_ROUTE:=0}"
     # Set 1 to enable TCP SYN cookies (default)
     # cf http://cr.yp.to/syncookies.html
-    : "${SYSCTL_TCP_SYNCOOKIES:='1'}"
+    : "${SYSCTL_TCP_SYNCOOKIES:=1}"
     # Set 0 to disable ICMP redirects (default)
-    : "${SYSCTL_ICMP_REDIRECTS:='0'}"
+    : "${SYSCTL_ICMP_REDIRECTS:=0}"
     # Set 1 to enable Reverse Path filtering (default)
     # Set 0 if VRRP is used
-    : "${SYSCTL_RP_FILTER:='1'}"
+    : "${SYSCTL_RP_FILTER:=1}"
     # Set 1 to log packets with inconsistent address (default)
-    : "${SYSCTL_LOG_MARTIANS:='1'}"
+    : "${SYSCTL_LOG_MARTIANS:=1}"
 
     if [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "1" ] || [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "0" ]; then
         echo "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
