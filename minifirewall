@@ -478,34 +478,46 @@ start() {
         # Privileged services (accessible from privileged & trusted IPs)
         for dstport in ${SERVICESTCP2}; do
             for srcip in ${PRIVILEGIEDIPS}; do
-                ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                if ! is_ipv6 ${srcip}; then
+                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                fi
             done
 
             for srcip in ${TRUSTEDIPS}; do
-                ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                if ! is_ipv6 ${srcip}; then
+                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                fi
             done
         done
 
         for dstport in ${SERVICESUDP2}; do
             for srcip in ${PRIVILEGIEDIPS}; do
-                ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                if ! is_ipv6 ${srcip}; then
+                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                fi
             done
 
             for srcip in ${TRUSTEDIPS}; do
-                ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                if ! is_ipv6 ${srcip}; then
+                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                fi
             done
         done
 
         # Trusted services (accessible from trusted IPs)
         for dstport in ${SERVICESTCP3}; do
             for srcip in ${TRUSTEDIPS}; do
-                ${IPT} -I MINIFW-DOCKER-TRUSTED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                if ! is_ipv6 ${srcip}; then
+                    ${IPT} -I MINIFW-DOCKER-TRUSTED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                fi
             done
         done
 
         for dstport in ${SERVICESUDP3}; do
             for srcip in ${TRUSTEDIPS}; do
-                ${IPT} -I MINIFW-DOCKER-TRUSTED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                if ! is_ipv6 ${srcip}; then
+                    ${IPT} -I MINIFW-DOCKER-TRUSTED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                fi
             done
         done
     fi
