@@ -298,6 +298,11 @@ start() {
         ${IPT6} -A LOG_ACCEPT -j ACCEPT
     fi
 
+    # Source additional rules and commands
+    # * from legacy configuration file (/etc/default/minifirewall)
+    # * from configuration directory (/etc/minifirewall.d/*)
+    source_includes
+
     # Trusted ip addresses
     ${IPT} -N ONLYTRUSTED
     ${IPT} -A ONLYTRUSTED -j LOG_DROP
@@ -712,9 +717,6 @@ start() {
     if is_legacy_config; then
         source_file_or_error "${config_file}"
     fi
-
-    # Source files present in optional directory
-    source_includes
 
     trap - INT TERM EXIT
 
