@@ -28,7 +28,7 @@
 # Description:       Firewall designed for standalone server
 ### END INIT INFO
 
-VERSION="22.03.3"
+VERSION="22.03.4"
 
 NAME="minifirewall"
 # shellcheck disable=SC2034
