@@ -149,7 +149,7 @@ source_file_or_error() {
             cat "${tmpfile}"
             exit 1
     fi
-    rm "${tmpfile}"
+    rm -f "${tmpfile}"
 }
 source_configuration() {
     if ! test -f ${config_file}; then
@@ -194,7 +194,7 @@ source_configuration() {
         grep -E "^\s*[_a-zA-Z0-9]+=" "${config_file}" > "${tmp_config_file}"
 
         source_file_or_error "${tmp_config_file}"
-        rm "${tmp_config_file}"
+        rm -f "${tmp_config_file}"
     else
         source_file_or_error "${config_file}"
     fi
