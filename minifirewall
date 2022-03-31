@@ -843,11 +843,13 @@ stop() {
 }
 
 status() {
-    ${IPT} -L -n -v --line-numbers
-    ${IPT} -t nat -L -n -v --line-numbers
-    ${IPT} -t mangle -L -n -v --line-numbers
-    ${IPT6} -L -n -v --line-numbers
-    ${IPT6} -t mangle -L -n -v --line-numbers
+    ${IPT} --list --numeric --verbose --line-numbers
+    ${IPT} -t nat --list --numeric --verbose --line-numbers
+    ${IPT} -t mangle --list --numeric --verbose --line-numbers
+    if is_ipv6_enabled; then
+        ${IPT6} --list --numeric --verbose --line-numbers
+        ${IPT6} -t mangle --list --numeric --verbose --line-numbers
+    fi
 }
 
 reset() {
