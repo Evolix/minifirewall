@@ -97,6 +97,11 @@ BACKUPSERVERS=''
 
 LEGACY_CONFIG='off'
 
+STATE_FILE_LATEST='/var/run/minifirewall_state_latest'
+STATE_FILE_CURRENT='/var/run/minifirewall_state_current'
+STATE_FILE_PREVIOUS='/var/run/minifirewall_state_previous'
+STATE_FILE_DIFF='/var/run/minifirewall_state_diff'
+
 ## pseudo dry-run :
 ## Uncomment and call these functions instead of the real iptables and ip6tables commands
 # IPT="fake_iptables"
@@ -205,6 +210,80 @@ source_includes() {
         for include_file in ${include_files}; do
             source_file_or_error "${include_file}"
         done
+    fi
+}
+check_unpersisted_state() {
+    cmp_bin=$(command -v cmp)
+    diff_bin=$(command -v diff)
+
+    if [ -z "${cmp_bin}" ]; then
+        echo "Skip state comparison (Can't find cmp command)" >&2
+    elif [ -z "${diff_bin}" ]; then
+        echo "Skip state comparison (Can't find diff command)" >&2
+    else
+        # store current state
+        mkdir -p "$(dirname "${STATE_FILE_CURRENT}")"
+        status_without_numbers > "${STATE_FILE_CURRENT}"
+
+        # clean previous diff file
+        rm -f "${STATE_FILE_DIFF}"
+
+        if [ -f "${STATE_FILE_LATEST}" ]; then
+            cmp_result=$(cmp "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}")
+            cmp_rc=$?
+
+            if [ ${cmp_rc} -eq 0 ]; then
+                # echo "...rules have not changed since latest start"
+                :
+            elif [ ${cmp_rc} -eq 1 ]; then
+                diff -u "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" > "${STATE_FILE_DIFF}"
+                echo "Warning: rules have changed since latest start. Check ${STATE_FILE_DIFF}" >&2
+            else
+                echo "Error comparing rules:" >&2
+                echo "${cmp_result}" >&2
+            fi
+        fi
+        # cleanup
+        rm -f "${STATE_FILE_CURRENT}"
+    fi
+}
+report_state_changes() {
+    cmp_bin=$(command -v cmp)
+    diff_bin=$(command -v diff)
+
+    if [ -z "${cmp_bin}" ]; then
+        echo "Skip state comparison (Can't find cmp command)" >&2
+        return
+    elif [ -z "${diff_bin}" ]; then
+        echo "Skip state comparison (Can't find diff command)" >&2
+    else
+        # If there is a known state
+        # let's compare it with the current state
+        if [ -f "${STATE_FILE_LATEST}" ]; then
+            check_unpersisted_state
+        fi
+
+        # Then reset the known state
+        mkdir -p "$(dirname "${STATE_FILE_LATEST}")"
+        status_without_numbers > "${STATE_FILE_LATEST}"
+
+        # But if there is a previous known state
+        # let's compare with the new known state
+        if [ -f "${STATE_FILE_PREVIOUS}" ]; then
+            cmp_result=$(cmp "${STATE_FILE_PREVIOUS}" "${STATE_FILE_LATEST}")
+            cmp_rc=$?
+
+            if [ ${cmp_rc} -eq 0 ]; then
+                # echo "Rules have not changed since previous start"
+                :
+            elif [ ${cmp_rc} -eq 1 ]; then
+                diff -u "${STATE_FILE_PREVIOUS}" "${STATE_FILE_LATEST}" > "${STATE_FILE_DIFF}"
+                echo "Warning: rules have changed since previous start. Check ${STATE_FILE_DIFF}" >&2
+            else
+                echo "Error comparing rules:" >&2
+                echo "${cmp_result}" >&2
+            fi
+        fi
     fi
 }
 
@@ -758,13 +837,24 @@ start() {
         source_file_or_error "${config_file}"
     fi
 
+    # Finish
+    ########################
+
     trap - INT TERM EXIT
 
     echo "...starting IPTables rules is now finish : OK"
+
+    # No need to exit on error anymore
+    set +e
+
+    report_state_changes
 }
 
 stop() {
     echo "Flush all rules and accept everything..."
+
+    mkdir -p "$(dirname "${STATE_FILE_PREVIOUS}")"
+    status_without_numbers > "${STATE_FILE_PREVIOUS}"
 
     # Delete all rules
     ${IPT} -F INPUT
@@ -840,6 +930,8 @@ stop() {
     fi
 
     echo "...flushing IPTables rules is now finish : OK"
+
+    rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}"
 }
 
 status() {
@@ -857,6 +949,18 @@ status() {
     fi
 }
 
+status_without_numbers() {
+    printf "#### iptables --list ###############################\n"
+    ${IPT} --list --numeric
+    printf "\n### iptables --table nat --list ####################\n"
+    ${IPT} --table nat --list --numeric
+    printf "\n#### iptables --table mangle --list ################\n"
+    ${IPT} --table mangle --list --numeric
+    if is_ipv6_enabled; then
+        printf "\n#### ip6tables --list ##############################\n"
+        ${IPT6} --list --numeric
+        printf "\n#### ip6tables --table mangle --list ###############\n"
+        ${IPT6} --table mangle --list --numeric
     fi
 }
 
@@ -883,6 +987,7 @@ source_configuration
 
 case "${1:-''}" in
     start)
+        check_unpersisted_state
         start
     ;;
 
@@ -899,6 +1004,7 @@ case "${1:-''}" in
     ;;
 
     restart)
+        check_unpersisted_state
         stop
         start
     ;;

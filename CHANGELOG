@@ -6,6 +6,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Added
 
 * markers for each section of status output
+* store and compare state between restart
 
 ### Changed
 
