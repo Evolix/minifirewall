@@ -102,6 +102,8 @@ STATE_FILE_CURRENT='/var/run/minifirewall_state_current'
 STATE_FILE_PREVIOUS='/var/run/minifirewall_state_previous'
 STATE_FILE_DIFF='/var/run/minifirewall_state_diff'
 
+LOGGER_BIN=$(command -v logger)
+
 # No colors by default
 RED=''
 GREEN=''
@@ -143,6 +145,16 @@ fi
 # }
 ## Beware that commands executed from included files are not modified by this trick.
 
+syslog_info() {
+    if [ -x "${LOGGER_BIN}" ]; then
+        ${LOGGER_BIN} -t "${NAME}" -p daemon.info "$1"
+    fi
+}
+syslog_error() {
+    if [ -x "${LOGGER_BIN}" ]; then
+        ${LOGGER_BIN} -t "${NAME}" -p daemon.error "$1"
+    fi
+}
 sort_values() {
     echo "$*" | tr ' ' '\n' | sort -h
 }
@@ -179,6 +191,7 @@ source_file_or_error() {
     . "${file}" 2>"${tmpfile}" >&2
 
     if [ -s "${tmpfile}" ]; then
+            syslog_error "Error while sourcing ${file}"
             printf "${RED}%s returns standard or error output (see below). Stopping.${RESET}\n" ${file} >&2
             cat "${tmpfile}"
             exit 1
@@ -266,7 +279,7 @@ check_unpersisted_state() {
                 :
             elif [ ${cmp_rc} -eq 1 ]; then
                 diff -u "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" > "${STATE_FILE_DIFF}"
-                printf "${YELLOW}WARNING: current state is different than persisted state. Check %s${RESET}\n" "${STATE_FILE_DIFF}" >&2
+                printf "${YELLOW}WARNING: current state is different than persisted state, check %s${RESET}\n" "${STATE_FILE_DIFF}" >&2
             else
                 printf "${RED}ERROR comparing rules:${RESET}\n" >&2
                 echo "${cmp_result}" >&2
@@ -307,7 +320,7 @@ report_state_changes() {
                 :
             elif [ ${cmp_rc} -eq 1 ]; then
                 diff -u "${STATE_FILE_PREVIOUS}" "${STATE_FILE_LATEST}" > "${STATE_FILE_DIFF}"
-                printf "${YELLOW}INFO: rules have changed since latest start. Check %s${RESET}\n" "${STATE_FILE_DIFF}" >&2
+                printf "${YELLOW}INFO: rules have changed since latest start, check %s${RESET}\n" "${STATE_FILE_DIFF}" >&2
             else
                 printf "${RED}ERROR comparing rules:${RESET}\n" >&2
                 echo "${cmp_result}" >&2
@@ -317,11 +330,12 @@ report_state_changes() {
 }
 
 start() {
-    printf "${BOLD}minifirewall start:${RESET}\n"
+    syslog_info "starting"
+    printf "${BOLD}${NAME} start:${RESET}\n"
 
     # Stop and warn if error!
     set -e
-    trap 'printf "${RED}ERROR in minifirewall configuration (fix it now!) or script manipulation (fix yourself).${RESET}\n" ' INT TERM EXIT
+    trap 'printf "${RED}ERROR in ${NAME} configuration (fix it now!) or script manipulation (fix yourself).${RESET}\n"; syslog_error "Error in ${NAME} configuration" ' INT TERM EXIT
 
     # sysctl network security settings
     ##################################
@@ -871,7 +885,8 @@ start() {
 
     trap - INT TERM EXIT
 
-    printf "${GREEN}${BOLD}minifirewall start: OK${RESET}\n"
+    syslog_info "started"
+    printf "${GREEN}${BOLD}${NAME}  start: OK${RESET}\n"
 
     # No need to exit on error anymore
     set +e
@@ -880,7 +895,9 @@ start() {
 }
 
 stop() {
-    printf "${BOLD}minifirewall stop:${RESET}\n"
+    syslog_info "stopping"
+    printf "${BOLD}${NAME} stop:${RESET}\n"
+
     printf "${BLUE}flushing all rules and accepting everything${RESET}\n"
 
     mkdir -p "$(dirname "${STATE_FILE_PREVIOUS}")"
@@ -961,7 +978,8 @@ stop() {
 
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}"
 
-    printf "${GREEN}${BOLD}minifirewall stop: OK${RESET}\n"
+    syslog_info "stopped"
+    printf "${GREEN}${BOLD}${NAME} stop: OK${RESET}\n"
 }
 
 status() {
@@ -995,7 +1013,8 @@ status_without_numbers() {
 }
 
 reset() {
-    printf "${BOLD}minifirewall reset counters:${RESET}\n"
+    syslog_info "resetting"
+    printf "${BOLD}${NAME} reset counters:${RESET}\n"
 
     ${IPT} -Z
     if is_ipv6_enabled; then
@@ -1009,7 +1028,8 @@ reset() {
         ${IPT6} -t mangle -Z
     fi
 
-    printf "${GREEN}${BOLD}minifirewall reset counters: OK${RESET}\n"
+    syslog_info "reset"
+    printf "${GREEN}${BOLD}${NAME} reset counters: OK${RESET}\n"
 }
 
 echo "${NAME} version ${VERSION}"
