@@ -1035,9 +1035,10 @@ reset() {
 echo "${NAME} version ${VERSION}"
 source_configuration
 
+check_unpersisted_state
+
 case "${1:-''}" in
     start)
-        check_unpersisted_state
         start
     ;;
 
@@ -1054,7 +1055,6 @@ case "${1:-''}" in
     ;;
 
     restart)
-        check_unpersisted_state
         stop
         start
     ;;
