@@ -102,6 +102,35 @@ STATE_FILE_CURRENT='/var/run/minifirewall_state_current'
 STATE_FILE_PREVIOUS='/var/run/minifirewall_state_previous'
 STATE_FILE_DIFF='/var/run/minifirewall_state_diff'
 
+# No colors by default
+RED=''
+GREEN=''
+YELLOW=''
+BLUE=''
+MAGENTA=''
+CYAN=''
+WHITE=''
+BOLD=''
+RESET=''
+# check if stdout is a terminal...
+if [ -t 1 ]; then
+
+    # see if it supports colors...
+    ncolors=$(tput colors)
+
+    if [ -n "${ncolors}" ] && [ ${ncolors} -ge 8 ]; then
+        RED=$(tput setaf 1)
+        GREEN=$(tput setaf 2)
+        YELLOW=$(tput setaf 3)
+        BLUE=$(tput setaf 4)
+        MAGENTA=$(tput setaf 5)
+        CYAN=$(tput setaf 6)
+        WHITE=$(tput setaf 7)
+        BOLD=$(tput bold)
+        RESET='\e[m'
+    fi
+fi
+
 ## pseudo dry-run :
 ## Uncomment and call these functions instead of the real iptables and ip6tables commands
 # IPT="fake_iptables"
@@ -144,13 +173,13 @@ chain_exists() {
 }
 source_file_or_error() {
     file=$1
-    echo "...sourcing '${file}\`"
+    printf "${BLUE}sourcing \`%s'${RESET}\n" "${file}"
 
     tmpfile=$(mktemp --tmpdir=/tmp minifirewall.XXX)
     . "${file}" 2>"${tmpfile}" >&2
 
     if [ -s "${tmpfile}" ]; then
-            echo "${file} returns standard or error output (see below). Stopping." >&2
+            printf "${RED}%s returns standard or error output (see below). Stopping.${RESET}\n" ${file} >&2
             cat "${tmpfile}"
             exit 1
     fi
@@ -158,13 +187,13 @@ source_file_or_error() {
 }
 source_configuration() {
     if ! test -f ${config_file}; then
-        echo "${config_file} does not exist" >&2
+        printf "${RED}%s does not exist${RESET}\n" "${config_file}" >&2
 
         ## We still want to deal with this really old configuration file
         ## even if it has been deprecated since Debian 8
         old_config_file="/etc/firewall.rc"
         if test -f ${old_config_file}; then
-            echo "${old_config_file} is deprecated. Rename it to ${config_file}" >&2
+            printf "${YELLOW}%s is deprecated. Rename it to %s${RESET}\n" "${old_config_file}" "${config_file}" >&2
         fi
 
         exit 1
@@ -174,7 +203,7 @@ source_configuration() {
         # Backward compatible mode
         ###########################
 
-        echo "Legacy config detected"
+        printf "${YELLOW}legacy config detected${RESET}\n"
         LEGACY_CONFIG='on'
 
         # Non-backward compatible mode
@@ -217,9 +246,9 @@ check_unpersisted_state() {
     diff_bin=$(command -v diff)
 
     if [ -z "${cmp_bin}" ]; then
-        echo "Skip state comparison (Can't find cmp command)" >&2
+        printf "${YELLOW}skip state comparison (Can't find cmp command)${RESET}\n" >&2
     elif [ -z "${diff_bin}" ]; then
-        echo "Skip state comparison (Can't find diff command)" >&2
+        printf "${YELLOW}skip state comparison (Can't find diff command)${RESET}\n" >&2
     else
         # store current state
         mkdir -p "$(dirname "${STATE_FILE_CURRENT}")"
@@ -233,13 +262,13 @@ check_unpersisted_state() {
             cmp_rc=$?
 
             if [ ${cmp_rc} -eq 0 ]; then
-                # echo "...rules have not changed since latest start"
+                # echo "   rules have not changed since latest start"
                 :
             elif [ ${cmp_rc} -eq 1 ]; then
                 diff -u "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" > "${STATE_FILE_DIFF}"
-                echo "Warning: rules have changed since latest start. Check ${STATE_FILE_DIFF}" >&2
+                printf "${YELLOW}WARNING: current state is different than persisted state. Check %s${RESET}\n" "${STATE_FILE_DIFF}" >&2
             else
-                echo "Error comparing rules:" >&2
+                printf "${RED}ERROR comparing rules:${RESET}\n" >&2
                 echo "${cmp_result}" >&2
             fi
         fi
@@ -252,10 +281,10 @@ report_state_changes() {
     diff_bin=$(command -v diff)
 
     if [ -z "${cmp_bin}" ]; then
-        echo "Skip state comparison (Can't find cmp command)" >&2
+        printf "${YELLOW}skip state comparison (Can't find cmp command)${RESET}\n" >&2
         return
     elif [ -z "${diff_bin}" ]; then
-        echo "Skip state comparison (Can't find diff command)" >&2
+        printf "${YELLOW}skip state comparison (Can't find diff command)${RESET}\n" >&2
     else
         # If there is a known state
         # let's compare it with the current state
@@ -278,9 +307,9 @@ report_state_changes() {
                 :
             elif [ ${cmp_rc} -eq 1 ]; then
                 diff -u "${STATE_FILE_PREVIOUS}" "${STATE_FILE_LATEST}" > "${STATE_FILE_DIFF}"
-                echo "Warning: rules have changed since previous start. Check ${STATE_FILE_DIFF}" >&2
+                printf "${YELLOW}INFO: rules have changed since latest start. Check %s${RESET}\n" "${STATE_FILE_DIFF}" >&2
             else
-                echo "Error comparing rules:" >&2
+                printf "${RED}ERROR comparing rules:${RESET}\n" >&2
                 echo "${cmp_result}" >&2
             fi
         fi
@@ -288,11 +317,11 @@ report_state_changes() {
 }
 
 start() {
-    echo "Start IPTables rules..."
+    printf "${BOLD}minifirewall start:${RESET}\n"
 
     # Stop and warn if error!
     set -e
-    trap 'echo "ERROR in minifirewall configuration (fix it now!) or script manipulation (fix yourself)." ' INT TERM EXIT
+    trap 'printf "${RED}ERROR in minifirewall configuration (fix it now!) or script manipulation (fix yourself).${RESET}\n" ' INT TERM EXIT
 
     # sysctl network security settings
     ##################################
@@ -317,14 +346,14 @@ start() {
     if [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "1" ] || [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "0" ]; then
         echo "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
     else
-        echo "Invalid SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS value '${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}', must be '0' or '1'." >&2
+        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS" "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" >&2
         exit 1
     fi
 
     if [ "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" = "1" ] || [ "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" = "0" ]; then
         echo "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
     else
-        echo "Invalid SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES value '${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}', must be '0' or '1'." >&2
+        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES" "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" >&2
         exit 1
     fi
 
@@ -333,14 +362,14 @@ start() {
             echo "${SYSCTL_ACCEPT_SOURCE_ROUTE}" > "${proc_sys_file}"
         done
     else
-        echo "Invalid SYSCTL_ACCEPT_SOURCE_ROUTE value '${SYSCTL_ACCEPT_SOURCE_ROUTE}', must be '0' or '1'." >&2
+        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ACCEPT_SOURCE_ROUTE" "${SYSCTL_ACCEPT_SOURCE_ROUTE}" >&2
         exit 1
     fi
 
     if [ "${SYSCTL_TCP_SYNCOOKIES}" = "1" ] || [ "${SYSCTL_TCP_SYNCOOKIES}" = "0" ]; then
         echo "${SYSCTL_TCP_SYNCOOKIES}" > /proc/sys/net/ipv4/tcp_syncookies
     else
-        echo "Invalid SYSCTL_TCP_SYNCOOKIES value '${SYSCTL_TCP_SYNCOOKIES}', must be '0' or '1'." >&2
+        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_TCP_SYNCOOKIES" "${SYSCTL_TCP_SYNCOOKIES}" >&2
         exit 1
     fi
 
@@ -352,7 +381,7 @@ start() {
             echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
         done
     else
-        echo "Invalid SYSCTL_ICMP_REDIRECTS value '${SYSCTL_ICMP_REDIRECTS}', must be '0' or '1'." >&2
+        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ICMP_REDIRECTS" "${SYSCTL_ICMP_REDIRECTS}" >&2
         exit 1
     fi
 
@@ -361,7 +390,7 @@ start() {
             echo "${SYSCTL_RP_FILTER}" > "${proc_sys_file}"
         done
     else
-        echo "Invalid SYSCTL_RP_FILTER value '${SYSCTL_RP_FILTER}', must be '0' or '1'." >&2
+        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_RP_FILTER" "${SYSCTL_RP_FILTER}" >&2
         exit 1
     fi
 
@@ -370,7 +399,7 @@ start() {
             echo "${SYSCTL_LOG_MARTIANS}" > "${proc_sys_file}"
         done
     else
-        echo "Invalid SYSCTL_LOG_MARTIANS value '${SYSCTL_LOG_MARTIANS}', must be '0' or '1'." >&2
+        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_LOG_MARTIANS" "${SYSCTL_LOG_MARTIANS}" >&2
         exit 1
     fi
 
@@ -786,7 +815,7 @@ start() {
                 ${IPT} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED,RELATED -j ACCEPT
             fi
         else
-            echo "Unrecognized syntax for BACKUPSERVERS '${server}\`. Use space-separated IP:PORT tuples." >&2
+            printf "${RED}ERROR: unrecognized syntax for BACKUPSERVERS '%s\`. Use space-separated IP:PORT tuples.${RESET}\n" "${server}" >&2
             exit 1
         fi
     done
@@ -842,7 +871,7 @@ start() {
 
     trap - INT TERM EXIT
 
-    echo "...starting IPTables rules is now finish : OK"
+    printf "${GREEN}${BOLD}minifirewall start: OK${RESET}\n"
 
     # No need to exit on error anymore
     set +e
@@ -851,7 +880,8 @@ start() {
 }
 
 stop() {
-    echo "Flush all rules and accept everything..."
+    printf "${BOLD}minifirewall stop:${RESET}\n"
+    printf "${BLUE}flushing all rules and accepting everything${RESET}\n"
 
     mkdir -p "$(dirname "${STATE_FILE_PREVIOUS}")"
     status_without_numbers > "${STATE_FILE_PREVIOUS}"
@@ -929,9 +959,9 @@ stop() {
         ${IPT6} -X NEEDRESTRICT
     fi
 
-    echo "...flushing IPTables rules is now finish : OK"
-
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}"
+
+    printf "${GREEN}${BOLD}minifirewall stop: OK${RESET}\n"
 }
 
 status() {
@@ -965,7 +995,7 @@ status_without_numbers() {
 }
 
 reset() {
-    echo "Reset all IPTables counters..."
+    printf "${BOLD}minifirewall reset counters:${RESET}\n"
 
     ${IPT} -Z
     if is_ipv6_enabled; then
@@ -979,7 +1009,7 @@ reset() {
         ${IPT6} -t mangle -Z
     fi
 
-    echo "...reseting IPTables counters is now finish : OK"
+    printf "${GREEN}${BOLD}minifirewall reset counters: OK${RESET}\n"
 }
 
 echo "${NAME} version ${VERSION}"
