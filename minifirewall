@@ -843,12 +843,20 @@ stop() {
 }
 
 status() {
+    printf "#### iptables --list ###############################\n"
     ${IPT} --list --numeric --verbose --line-numbers
-    ${IPT} -t nat --list --numeric --verbose --line-numbers
-    ${IPT} -t mangle --list --numeric --verbose --line-numbers
+    printf "\n### iptables --table nat --list ####################\n"
+    ${IPT} --table nat --list --numeric --verbose --line-numbers
+    printf "\n#### iptables --table mangle --list ################\n"
+    ${IPT} --table mangle --list --numeric --verbose --line-numbers
     if is_ipv6_enabled; then
+        printf "\n#### ip6tables --list ##############################\n"
         ${IPT6} --list --numeric --verbose --line-numbers
-        ${IPT6} -t mangle --list --numeric --verbose --line-numbers
+        printf "\n#### ip6tables --table mangle --list ###############\n"
+        ${IPT6} --table mangle --list --numeric --verbose --line-numbers
+    fi
+}
+
     fi
 }
 
