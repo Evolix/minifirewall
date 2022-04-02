@@ -1,0 +1,22 @@
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
+and this project **does not adhere to [Semantic Versioning](http://semver.org/spec/v2.0.0.html)**.
+
+## [Unreleased]
+
+### Added
+
+* markers for each section of status output
+
+### Changed
+
+* use long options in some places
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+* force remove temporary files
+
+### Security
