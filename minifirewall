@@ -185,6 +185,7 @@ chain_exists() {
 }
 source_file_or_error() {
     file=$1
+    syslog_info "sourcing \`${file}'"
     printf "${BLUE}sourcing \`%s'${RESET}\n" "${file}"
 
     tmpfile=$(mktemp --tmpdir=/tmp minifirewall.XXX)
