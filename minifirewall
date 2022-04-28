@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2059
 
 # minifirewall is shellscripts for easy firewalling on a standalone server
 # we used netfilter/iptables http://netfilter.org/ designed for recent Linux kernel
