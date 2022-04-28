@@ -1049,27 +1049,39 @@ of the License.
 END
 }
 
-source_configuration
-check_unpersisted_state
-
 case "${1:-''}" in
     start)
+        source_configuration
+        check_unpersisted_state
+
         start
     ;;
 
     stop)
+        source_configuration
+        check_unpersisted_state
+
         stop
     ;;
 
     status)
+        source_configuration
+        check_unpersisted_state
+
         status
     ;;
 
     reset)
+        source_configuration
+        check_unpersisted_state
+
         reset
     ;;
 
     restart)
+        source_configuration
+        check_unpersisted_state
+
         stop
         start
     ;;
