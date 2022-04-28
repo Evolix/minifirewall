@@ -9,6 +9,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 * store and compare state between restart
 * colorize output if terminal supports colors
 * simple syslog logging
+* "version" action
 
 ### Changed
 
