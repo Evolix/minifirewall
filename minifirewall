@@ -332,11 +332,11 @@ report_state_changes() {
 
 start() {
     syslog_info "starting"
-    printf "${BOLD}${NAME} start:${RESET}\n"
+    printf "${BOLD}${NAME} starting${RESET}\n"
 
     # Stop and warn if error!
     set -e
-    trap 'printf "${RED}ERROR in ${NAME} configuration (fix it now!) or script manipulation (fix yourself).${RESET}\n"; syslog_error "Error in ${NAME} configuration" ' INT TERM EXIT
+    trap 'printf "${RED}${NAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed" ' INT TERM EXIT
 
     # sysctl network security settings
     ##################################
@@ -887,7 +887,7 @@ start() {
     trap - INT TERM EXIT
 
     syslog_info "started"
-    printf "${GREEN}${BOLD}${NAME}  start: OK${RESET}\n"
+    printf "${GREEN}${BOLD}${NAME} started${RESET}\n"
 
     # No need to exit on error anymore
     set +e
@@ -897,7 +897,7 @@ start() {
 
 stop() {
     syslog_info "stopping"
-    printf "${BOLD}${NAME} stop:${RESET}\n"
+    printf "${BOLD}${NAME} stopping${RESET}\n"
 
     printf "${BLUE}flushing all rules and accepting everything${RESET}\n"
 
@@ -980,7 +980,7 @@ stop() {
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}"
 
     syslog_info "stopped"
-    printf "${GREEN}${BOLD}${NAME} stop: OK${RESET}\n"
+    printf "${GREEN}${BOLD}${NAME} stopped${RESET}\n"
 }
 
 status() {
@@ -1015,7 +1015,7 @@ status_without_numbers() {
 
 reset() {
     syslog_info "resetting"
-    printf "${BOLD}${NAME} reset counters:${RESET}\n"
+    printf "${BOLD}${NAME} resetting${RESET}\n"
 
     ${IPT} -Z
     if is_ipv6_enabled; then
@@ -1030,7 +1030,7 @@ reset() {
     fi
 
     syslog_info "reset"
-    printf "${GREEN}${BOLD}${NAME} reset counters: OK${RESET}\n"
+    printf "${GREEN}${BOLD}${NAME} reset${RESET}\n"
 }
 
 echo "${NAME} version ${VERSION}"
