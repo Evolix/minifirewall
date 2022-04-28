@@ -15,6 +15,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 * use long options in some places
 * output is normalized
+* source legacy config after macros but before DROP policy
 
 ### Deprecated
 

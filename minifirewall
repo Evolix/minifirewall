@@ -842,6 +842,10 @@ start() {
         ${IPT6} -A INPUT -p icmpv6 -j ACCEPT
     fi
 
+    # source config file for remaining commands
+    if is_legacy_config; then
+        source_file_or_error "${config_file}"
+    fi
 
     # IPTables policy
     #################
@@ -876,10 +880,6 @@ start() {
     ${IPT} -A OUTPUT -p udp -j DROP
     if is_ipv6_enabled; then
         ${IPT6} -A OUTPUT -p udp -j DROP
-    fi
-
-    if is_legacy_config; then
-        source_file_or_error "${config_file}"
     fi
 
     # Finish
