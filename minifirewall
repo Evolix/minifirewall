@@ -214,7 +214,8 @@ source_configuration() {
         exit 1
     fi
 
-    if grep -e "iptables" -e "ip6tables" "${config_file}" | grep -qvE "^#"; then
+    # If we find something other than a blank line, a comment or a variable assignment
+    if grep --quiet --extended-regexp --invert-match "^\s*(#|$|\w+=)" "${config_file}"; then
         # Backward compatible mode
         ###########################
 
@@ -240,7 +241,8 @@ source_configuration() {
         # and not interfere with the configuration step.
 
         tmp_config_file=$(mktemp --tmpdir=/tmp minifirewall.XXX)
-        grep -E "^\s*[_a-zA-Z0-9]+=" "${config_file}" > "${tmp_config_file}"
+        # get only variable assignments
+        grep -E "^\s*\w+=" "${config_file}" > "${tmp_config_file}"
 
         source_file_or_error "${tmp_config_file}"
         rm -f "${tmp_config_file}"
