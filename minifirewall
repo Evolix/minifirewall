@@ -208,7 +208,7 @@ source_configuration() {
         ## even if it has been deprecated since Debian 8
         old_config_file="/etc/firewall.rc"
         if test -f ${old_config_file}; then
-            printf "${YELLOW}%s is deprecated. Rename it to %s${RESET}\n" "${old_config_file}" "${config_file}" >&2
+            printf "${YELLOW}%s is deprecated and ignored. Rename it to %s${RESET}\n" "${old_config_file}" "${config_file}" >&2
         fi
 
         exit 1
