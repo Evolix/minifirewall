@@ -5,6 +5,20 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [22.04] - 2022-04-28
+
+### Added
+
 * markers for each section of status output
 * store and compare state between restart
 * colorize output if terminal supports colors
@@ -19,12 +33,6 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 * source configuration only for valid actions
 * improve legacy config parsing
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 * force remove temporary files
-
-### Security
