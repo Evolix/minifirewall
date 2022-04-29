@@ -1,159 +1,50 @@
 #!/bin/sh
 # shellcheck disable=SC2059
 
-# minifirewall is a shell script for easy firewalling on a standalone server
-# It uses netfilter/iptables http://netfilter.org/ designed for recent Linux kernel
-# See https://gitea.evolix.org/evolix/minifirewall
-
-# Copyright (c) 2007-2022 Evolix
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 3
-# of the License.
-
-# Description
-# script for standalone server
-
-# Start or stop minifirewall
-#
-
-### BEGIN INIT INFO
-# Provides:          minifirewall
-# Required-Start:
-# Required-Stop:
-# Should-Start:      $network $syslog $named
-# Should-Stop:       $syslog
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: start and stop the firewall
-# Description:       Firewall designed for standalone server
-### END INIT INFO
-
-VERSION="22.04"
-
-NAME="minifirewall"
+PROGNAME="minifirewall"
 # shellcheck disable=SC2034
-DESC="Firewall designed for standalone server"
+REPOSITORY="https://gitea.evolix.org/evolix/minifirewall"
+
+VERSION="22.04.3"
+readonly VERSION
 
 set -u
 
-# Variables configuration
-#########################
+show_version() {
+    cat <<END
+${PROGNAME} version ${VERSION}
 
-config_file="/etc/default/minifirewall"
-includes_dir="/etc/minifirewall.d"
+Copyright 2007-2022 Evolix <info@evolix.fr>.
 
-# iptables paths
-IPT=$(command -v iptables)
-if [ -z "${IPT}" ]; then
-    echo "Unable to find 'iptables\` command in PATH." >&2
-    exit 1
-fi
-IPT6=$(command -v ip6tables)
-if [ -z "${IPT6}" ]; then
-    echo "Unable to find 'ip6tables\` command in PATH." >&2
-    exit 1
-fi
+${PROGNAME} comes with ABSOLUTELY NO WARRANTY.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 3
+of the License.
+END
+}
+show_help() {
+    cat <<END
+minifirewall is wrapper around netfilter/iptables for easy local firewalling on Linux.
 
-# TCP/IP variables
-LOOPBACK='127.0.0.0/8'
-CLASSA='10.0.0.0/8'
-CLASSB='172.16.0.0/12'
-CLASSC='192.168.0.0/16'
-CLASSD='224.0.0.0/4'
-CLASSE='240.0.0.0/5'
-ALL='0.0.0.0'
-BROAD='255.255.255.255'
-PORTSROOT='0:1023'
-PORTSUSER='1024:65535'
-
-# Configuration
-
-INT=''
-IPV6=''
-DOCKER=''
-INTLAN=''
-TRUSTEDIPS=''
-PRIVILEGIEDIPS=''
-SERVICESTCP1p=''
-SERVICESUDP1p=''
-SERVICESTCP1=''
-SERVICESUDP1=''
-SERVICESTCP2=''
-SERVICESUDP2=''
-SERVICESTCP3=''
-SERVICESUDP3=''
-DNSSERVEURS=''
-HTTPSITES=''
-HTTPSSITES=''
-FTPSITES=''
-SSHOK=''
-SMTPOK=''
-SMTPSECUREOK=''
-NTPOK=''
-PROXY=''
-PROXYBYPASS=''
-PROXYPORT=''
-BACKUPSERVERS=''
-
-LEGACY_CONFIG='off'
-
-STATE_FILE_LATEST='/var/run/minifirewall_state_latest'
-STATE_FILE_CURRENT='/var/run/minifirewall_state_current'
-STATE_FILE_PREVIOUS='/var/run/minifirewall_state_previous'
-STATE_FILE_DIFF='/var/run/minifirewall_state_diff'
-
-LOGGER_BIN=$(command -v logger)
-
-# No colors by default
-RED=''
-GREEN=''
-YELLOW=''
-BLUE=''
-MAGENTA=''
-CYAN=''
-WHITE=''
-BOLD=''
-RESET=''
-# check if stdout is a terminal...
-if [ -t 1 ]; then
-
-    # see if it supports colors...
-    ncolors=$(tput colors)
-
-    if [ -n "${ncolors}" ] && [ ${ncolors} -ge 8 ]; then
-        RED=$(tput setaf 1)
-        GREEN=$(tput setaf 2)
-        YELLOW=$(tput setaf 3)
-        BLUE=$(tput setaf 4)
-        MAGENTA=$(tput setaf 5)
-        CYAN=$(tput setaf 6)
-        WHITE=$(tput setaf 7)
-        BOLD=$(tput bold)
-        RESET='\e[m'
-    fi
-fi
-
-## pseudo dry-run :
-## Uncomment and call these functions instead of the real iptables and ip6tables commands
-# IPT="fake_iptables"
-# IPT6="fake_ip6tables"
-# fake_iptables() {
-#     printf "DRY-RUN iptables %s\n" "$*"
-# }
-# fake_ip6tables() {
-#     printf "DRY-RUN ip6tables %s\n" "$*"
-# }
-## Beware that commands executed from included files are not modified by this trick.
+Usage: minifirewall start
+  or   minifirewall stop
+  or   minifirewall restart
+  or   minifirewall reset
+  or   minifirewall status
+  or   minifirewall {version|--version|-V}
+  or   minifirewall {help|--help|-h|-?}
+END
+}
 
 syslog_info() {
     if [ -x "${LOGGER_BIN}" ]; then
-        ${LOGGER_BIN} -t "${NAME}" -p daemon.info "$1"
+        ${LOGGER_BIN} -t "${PROGNAME}" -p daemon.info "$1"
     fi
 }
 syslog_error() {
     if [ -x "${LOGGER_BIN}" ]; then
-        ${LOGGER_BIN} -t "${NAME}" -p daemon.error "$1"
+        ${LOGGER_BIN} -t "${PROGNAME}" -p daemon.error "$1"
     fi
 }
 sort_values() {
@@ -335,11 +226,11 @@ report_state_changes() {
 
 start() {
     syslog_info "starting"
-    printf "${BOLD}${NAME} starting${RESET}\n"
+    printf "${BOLD}${PROGNAME} starting${RESET}\n"
 
     # Stop and warn if error!
     set -e
-    trap 'printf "${RED}${NAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed" ' INT TERM EXIT
+    trap 'printf "${RED}${PROGNAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed" ' INT TERM EXIT
 
     # sysctl network security settings
     ##################################
@@ -890,7 +781,7 @@ start() {
     trap - INT TERM EXIT
 
     syslog_info "started"
-    printf "${GREEN}${BOLD}${NAME} started${RESET}\n"
+    printf "${GREEN}${BOLD}${PROGNAME} started${RESET}\n"
 
     # No need to exit on error anymore
     set +e
@@ -900,7 +791,7 @@ start() {
 
 stop() {
     syslog_info "stopping"
-    printf "${BOLD}${NAME} stopping${RESET}\n"
+    printf "${BOLD}${PROGNAME} stopping${RESET}\n"
 
     printf "${BLUE}flushing all rules and accepting everything${RESET}\n"
 
@@ -983,7 +874,7 @@ stop() {
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}"
 
     syslog_info "stopped"
-    printf "${GREEN}${BOLD}${NAME} stopped${RESET}\n"
+    printf "${GREEN}${BOLD}${PROGNAME} stopped${RESET}\n"
 }
 
 status() {
@@ -1018,7 +909,7 @@ status_without_numbers() {
 
 reset() {
     syslog_info "resetting"
-    printf "${BOLD}${NAME} resetting${RESET}\n"
+    printf "${BOLD}${PROGNAME} resetting${RESET}\n"
 
     ${IPT} -Z
     if is_ipv6_enabled; then
@@ -1033,67 +924,169 @@ reset() {
     fi
 
     syslog_info "reset"
-    printf "${GREEN}${BOLD}${NAME} reset${RESET}\n"
-}
-show_version() {
-    cat <<END
-${NAME} version ${VERSION}
-
-Copyright 2007-2022 Evolix <info@evolix.fr>.
-
-${NAME} comes with ABSOLUTELY NO WARRANTY.
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 3
-of the License.
-END
+    printf "${GREEN}${BOLD}${PROGNAME} reset${RESET}\n"
 }
 
-case "${1:-''}" in
-    start)
-        source_configuration
-        check_unpersisted_state
+main() {
+    case "${1:-''}" in
+        start)
+            source_configuration
+            check_unpersisted_state
 
-        start
-    ;;
+            start
+            ;;
 
-    stop)
-        source_configuration
-        check_unpersisted_state
+        stop)
+            source_configuration
+            check_unpersisted_state
 
-        stop
-    ;;
+            stop
+            ;;
 
-    status)
-        source_configuration
-        check_unpersisted_state
+        status)
+            source_configuration
+            check_unpersisted_state
 
-        status
-    ;;
+            status
+            ;;
 
-    reset)
-        source_configuration
-        check_unpersisted_state
+        reset)
+            source_configuration
+            check_unpersisted_state
 
-        reset
-    ;;
+            reset
+            ;;
 
-    restart)
-        source_configuration
-        check_unpersisted_state
+        restart)
+            source_configuration
+            check_unpersisted_state
 
-        stop
-        start
-    ;;
+            stop
+            start
+            ;;
 
-    version)
-        show_version
-    ;;
+        version|--version|-V)
+            show_version
+            exit 0
+            ;;
 
-    *)
-        echo "Usage: $0 {start|stop|restart|status|reset|version}" 
-        exit 1
-    ;;
-esac
+        help|-h|-\?|--help)
+            show_help
+            exit 0
+            ;;
 
-exit 0
+        *)
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+config_file="/etc/default/minifirewall"
+includes_dir="/etc/minifirewall.d"
+
+# iptables paths
+IPT=$(command -v iptables)
+if [ -z "${IPT}" ]; then
+    echo "Unable to find 'iptables\` command in PATH." >&2
+    exit 1
+fi
+IPT6=$(command -v ip6tables)
+if [ -z "${IPT6}" ]; then
+    echo "Unable to find 'ip6tables\` command in PATH." >&2
+    exit 1
+fi
+
+## pseudo dry-run :
+## Uncomment and call these functions instead of the real iptables and ip6tables commands
+# IPT="fake_iptables"
+# IPT6="fake_ip6tables"
+# fake_iptables() {
+#     printf "DRY-RUN iptables %s\n" "$*"
+# }
+# fake_ip6tables() {
+#     printf "DRY-RUN ip6tables %s\n" "$*"
+# }
+## Beware that commands executed from included files are not modified by this trick.
+
+# TCP/IP variables
+LOOPBACK='127.0.0.0/8'
+CLASSA='10.0.0.0/8'
+CLASSB='172.16.0.0/12'
+CLASSC='192.168.0.0/16'
+CLASSD='224.0.0.0/4'
+CLASSE='240.0.0.0/5'
+ALL='0.0.0.0'
+BROAD='255.255.255.255'
+PORTSROOT='0:1023'
+PORTSUSER='1024:65535'
+
+# Configuration
+
+INT=''
+IPV6=''
+DOCKER=''
+INTLAN=''
+TRUSTEDIPS=''
+PRIVILEGIEDIPS=''
+SERVICESTCP1p=''
+SERVICESUDP1p=''
+SERVICESTCP1=''
+SERVICESUDP1=''
+SERVICESTCP2=''
+SERVICESUDP2=''
+SERVICESTCP3=''
+SERVICESUDP3=''
+DNSSERVEURS=''
+HTTPSITES=''
+HTTPSSITES=''
+FTPSITES=''
+SSHOK=''
+SMTPOK=''
+SMTPSECUREOK=''
+NTPOK=''
+PROXY=''
+PROXYBYPASS=''
+PROXYPORT=''
+BACKUPSERVERS=''
+
+LEGACY_CONFIG='off'
+
+STATE_FILE_LATEST='/var/run/minifirewall_state_latest'
+STATE_FILE_CURRENT='/var/run/minifirewall_state_current'
+STATE_FILE_PREVIOUS='/var/run/minifirewall_state_previous'
+STATE_FILE_DIFF='/var/run/minifirewall_state_diff'
+
+LOGGER_BIN=$(command -v logger)
+
+# No colors by default
+RED=''
+GREEN=''
+YELLOW=''
+BLUE=''
+MAGENTA=''
+CYAN=''
+WHITE=''
+BOLD=''
+RESET=''
+# check if stdout is a terminal...
+if [ -t 1 ]; then
+
+    # see if it supports colors...
+    ncolors=$(tput colors)
+
+    if [ -n "${ncolors}" ] && [ ${ncolors} -ge 8 ]; then
+        RED=$(tput setaf 1)
+        GREEN=$(tput setaf 2)
+        YELLOW=$(tput setaf 3)
+        BLUE=$(tput setaf 4)
+        MAGENTA=$(tput setaf 5)
+        CYAN=$(tput setaf 6)
+        WHITE=$(tput setaf 7)
+        BOLD=$(tput bold)
+        RESET='\e[m'
+    fi
+fi
+
+# shellcheck disable=SC2086
+main ${ARGS}
