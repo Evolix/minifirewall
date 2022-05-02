@@ -8,9 +8,13 @@ See https://gitea.evolix.org/evolix/minifirewall
 ## Install
 
 ~~~
-install --mode 0700 minifirewall /etc/init.d/minifirewall
+install --mode 0700 minifirewall /usr/local/sbin/
+install --mode 0700 init.sh /etc/init.d/minifirewall
 install --mode 0600 minifirewall.conf /etc/default/minifirewall
 mkdir --mode 0700 /etc/minifirewall.d
+
+install --mode 0644 minifirewall.service /etc/systemd/system/minifirewall.service
+systemctl daemon-reload
 ~~~
 
 ## Config
@@ -38,10 +42,16 @@ you need to use the port used by the container (ie: 8080) in the public/semi-pub
 ## Usage
 
 ~~~
+systemctl start/stop/restart minifirewall
+minifirewall status
+~~~
+
+Formerly :
+~~~
 /etc/init.d/minifirewall start/stop/restart
 ~~~
 
-If you want to add minifirewall in boot sequence, add the start command to `/usr/share/scripts/alert5`.
+If you want to add minifirewall in SysV Init boot sequence, add the start command to `/usr/share/scripts/alert5`.
 
 ## License
 
