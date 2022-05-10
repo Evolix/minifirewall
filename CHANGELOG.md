@@ -13,6 +13,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Fixed
 
+* status output (number of # in headers)
+
 ### Security
 
 ## [22.04] - 2022-04-28
