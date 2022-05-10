@@ -17,6 +17,12 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Security
 
+## [22.05] - 2022-05-10
+
+#### Fixed
+
+* status output (number of # in headers)
+
 ## [22.04] - 2022-04-28
 
 ### Added
