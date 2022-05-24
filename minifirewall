@@ -398,6 +398,11 @@ start() {
         for proc_sys_file in /proc/sys/net/ipv4/conf/*/send_redirects; do
             echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
         done
+        if is_ipv6_enabled; then
+            for proc_sys_file in /proc/sys/net/ipv6/conf/*/accept_redirects; do
+                echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
+            done
+        fi
     else
         printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ICMP_REDIRECTS" "${SYSCTL_ICMP_REDIRECTS}" >&2
         exit 1
