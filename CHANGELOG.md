@@ -7,6 +7,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Changed
 
+* Configure sysctl values to IPv6 when applicable
+
 ### Deprecated
 
 ### Removed
