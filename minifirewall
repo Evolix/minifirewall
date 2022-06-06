@@ -121,6 +121,7 @@ if [ -t 1 ]; then
     # see if it supports colors...
     ncolors=$(tput colors)
 
+    # shellcheck disable=SC2086
     if [ -n "${ncolors}" ] && [ ${ncolors} -ge 8 ]; then
         RED=$(tput setaf 1)
         GREEN=$(tput setaf 2)
