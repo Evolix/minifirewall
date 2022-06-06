@@ -7,17 +7,23 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Changed
 
-* Configure sysctl values to IPv6 when applicable
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-* status output (number of # in headers)
-
 ### Security
+
+## [22.06] - 2022-06-06
+
+### Changed
+
+* Configure sysctl values to IPv6 when applicable
+
+### Fixed
+
+* status output (number of # in headers)
 
 ## [22.05] - 2022-05-10
 
