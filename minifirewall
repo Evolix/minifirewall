@@ -1100,4 +1100,4 @@ if [ -t 1 ]; then
 fi
 
 # shellcheck disable=SC2086
-main ${ARGS}
+main $@
