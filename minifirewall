@@ -27,11 +27,12 @@ show_help() {
     cat <<END
 minifirewall is wrapper around netfilter/iptables for easy local firewalling on Linux.
 
-Usage: minifirewall start
-  or   minifirewall stop
-  or   minifirewall restart
-  or   minifirewall reset
+Usage: systemctl start minifirewall
+  or   systemctl stop minifirewall
+  or   systemctl restart minifirewall
+  or   systemctl status minifirewall
   or   minifirewall status
+  or   minifirewall reset
   or   minifirewall {version|--version|-V}
   or   minifirewall {help|--help|-h|-?}
 END
@@ -147,6 +148,13 @@ source_includes() {
         for include_file in ${include_files}; do
             source_file_or_error "${include_file}"
         done
+    fi
+}
+exit_if_not_systemd() {
+    if [ $PPID -ne 1 ]; then
+        echo "Error: Please use minifirewall systemd service instead of direct call." 1>&2
+        show_help
+        exit 1
     fi
 }
 check_unpersisted_state() {
@@ -930,6 +938,7 @@ reset() {
 main() {
     case "${1:-''}" in
         start)
+            exit_if_not_systemd
             source_configuration
             check_unpersisted_state
 
@@ -937,6 +946,7 @@ main() {
             ;;
 
         stop)
+            exit_if_not_systemd
             source_configuration
             check_unpersisted_state
 
@@ -958,6 +968,7 @@ main() {
             ;;
 
         restart)
+            exit_if_not_systemd
             source_configuration
             check_unpersisted_state
 

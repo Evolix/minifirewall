@@ -22,16 +22,16 @@ fi
 
 case "$1" in
   start)
-        ${minifirewall_bin} start
+        systemctl start minifirewall
         ;;
   stop)
-        ${minifirewall_bin} stop
+        systemctl stop minifirewall
         ;;
   status)
-        ${minifirewall_bin} status
+        systemctl status minifirewall
         ;;
   restart|reload|condrestart)
-        ${minifirewall_bin} restart
+        systemctl restart minifirewall
         ;;
   reset)
         ${minifirewall_bin} reset
