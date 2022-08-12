@@ -11,7 +11,6 @@ Restart=no
 TimeoutSec=5min
 IgnoreSIGPIPE=no
 RemainAfterExit=yes
-SuccessExitStatus=5 6
 ExecStart=/usr/local/sbin/minifirewall start
 ExecStop=/usr/local/sbin/minifirewall stop
 
