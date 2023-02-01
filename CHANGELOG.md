@@ -7,8 +7,6 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Changed
 
-* Export status without colors
-
 ### Deprecated
 
 ### Removed
@@ -16,6 +14,10 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Fixed
 
 ### Security
+
+## [23.02] - 2023-02-01
+
+* Export status without colors (to keep clean diffs)
 
 ## [22.06] - 2022-06-06
 
