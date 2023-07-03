@@ -8,6 +8,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Changed
 
 * extract "include_files" function
+* capture cmp(1) error output
 
 ### Deprecated
 

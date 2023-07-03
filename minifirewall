@@ -285,7 +285,7 @@ check_unpersisted_state() {
         rm -f "${STATE_FILE_DIFF}"
 
         if [ -f "${STATE_FILE_LATEST}" ]; then
-            cmp_result=$(cmp "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}")
+            cmp_result=$(cmp "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" 2>&1)
             cmp_rc=$?
 
             if [ ${cmp_rc} -eq 0 ]; then
@@ -326,7 +326,7 @@ report_state_changes() {
         # But if there is a previous known state
         # let's compare with the new known state
         if [ -f "${STATE_FILE_PREVIOUS}" ]; then
-            cmp_result=$(cmp "${STATE_FILE_PREVIOUS}" "${STATE_FILE_LATEST}")
+            cmp_result=$(cmp "${STATE_FILE_PREVIOUS}" "${STATE_FILE_LATEST}" 2>&1)
             cmp_rc=$?
 
             if [ ${cmp_rc} -eq 0 ]; then
