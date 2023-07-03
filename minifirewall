@@ -254,10 +254,16 @@ source_configuration() {
         source_file_or_error "${config_file}"
     fi
 }
+include_files() {
+    if [ -d "${includes_dir}" ]; then
+        find ${includes_dir} -type f -readable -not -name '*.*' | sort -h
+    else
+        echo ""
+    fi
+}
 source_includes() {
     if [ -d "${includes_dir}" ]; then
-        include_files=$(find ${includes_dir} -type f -readable -not -name '*.*' | sort -h)
-        for include_file in ${include_files}; do
+        for include_file in $(include_files); do
             source_file_or_error "${include_file}"
         done
     fi
