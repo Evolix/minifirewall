@@ -7,8 +7,10 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Changed
 
-* extract "include_files" function
 * capture cmp(1) error output
+* early error if script is not run as root
+* extract "include_files" function
+* print help/usage with list of possible commands
 
 ### Deprecated
 
