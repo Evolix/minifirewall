@@ -5,7 +5,7 @@
 # It uses netfilter/iptables http://netfilter.org/ designed for recent Linux kernel
 # See https://gitea.evolix.org/evolix/minifirewall
 
-# Copyright (c) 2007-2022 Evolix
+# Copyright (c) 2007-2023 Evolix
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
@@ -29,7 +29,7 @@
 # Description:       Firewall designed for standalone server
 ### END INIT INFO
 
-VERSION="23.02"
+VERSION="23.07"
 
 PROGNAME="minifirewall"
 # shellcheck disable=SC2034
@@ -1147,7 +1147,7 @@ show_version() {
     cat <<END
 ${PROGNAME} version ${VERSION}
 
-Copyright 2007-2022 Evolix <info@evolix.fr>.
+Copyright 2007-2023 Evolix <info@evolix.fr>.
 
 ${PROGNAME} comes with ABSOLUTELY NO WARRANTY.
 This program is free software; you can redistribute it and/or

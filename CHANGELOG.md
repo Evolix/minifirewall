@@ -5,14 +5,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
-* new "check-active-config" command to check if the active configuration is th e same as the one persisted to disk
-
 ### Changed
-
-* capture cmp(1) error output
-* early error if script is not run as root
-* extract "include_files" function
-* print help/usage with list of possible commands
 
 ### Deprecated
 
@@ -21,6 +14,19 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Fixed
 
 ### Security
+
+## [23.07] - 2023-07-04
+
+### Added
+
+* new "check-active-config" command to check if the active configuration is th e same as the one persisted to disk
+
+### Changed
+
+* capture cmp(1) error output
+* early error if script is not run as root
+* extract "include_files" function
+* print help/usage with list of possible commands
 
 ## [23.02] - 2023-02-01
 
