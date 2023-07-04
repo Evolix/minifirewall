@@ -5,6 +5,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
+* new "check-active-config" command to check if the active configuration is th e same as the one persisted to disk
+
 ### Changed
 
 * capture cmp(1) error output

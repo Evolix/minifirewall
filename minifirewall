@@ -108,6 +108,9 @@ STATE_FILE_CURRENT='/var/run/minifirewall_state_current'
 STATE_FILE_PREVIOUS='/var/run/minifirewall_state_previous'
 STATE_FILE_DIFF='/var/run/minifirewall_state_diff'
 
+ACTIVE_CONFIG='/var/run/minifirewall_active_config'
+ACTIVE_CONFIG_DIFF="${ACTIVE_CONFIG}.diff"
+
 LOGGER_BIN=$(command -v logger)
 
 # No colors by default
@@ -272,6 +275,77 @@ source_includes() {
             source_file_or_error "${include_file}"
         done
     fi
+}
+filter_config_file() {
+    # Remove lines with:
+    # * empty or only whitespaces
+    # * comments
+    grep --extended-regexp --invert-match -e "^(\s*#)" -e "^\s*$" "${1}"
+}
+save_active_configuration() {
+    dest_file=${1}
+    rm -f "${dest_file}"
+
+    echo "# ${config_file}" >> "${dest_file}"
+    filter_config_file "${config_file}" >> "${dest_file}"
+
+    found_include_files=$(include_files)
+    if [ -n "${found_include_files}" ]; then
+        for include_file in ${found_include_files}; do
+            echo "# ${include_file}" >> "${dest_file}"
+            filter_config_file "${include_file}" >> "${dest_file}"
+        done
+    fi
+}
+check_active_configuration() {
+    # NRPE-compatible return codes
+    # 0: OK
+    # 1: WARNING
+    # 2: CRITICAL
+    # 3: UNKNOWN 
+    rc=0
+
+    if [ -f "${ACTIVE_CONFIG}" ]; then
+        cmp_bin=$(command -v cmp)
+        diff_bin=$(command -v diff)
+
+        if [ -z "${cmp_bin}" ]; then
+            printf "${YELLOW}Skipped active configuration check (Can't find cmp(1) command)${RESET}\n"
+            rc=1
+        elif [ -z "${diff_bin}" ]; then
+            printf "${YELLOW}Skipped active configuration check (Can't find diff(1) command)${RESET}\n"
+            rc=1
+        else
+            rm -f "${ACTIVE_CONFIG_DIFF}"
+
+            tmp_config_file=$(mktemp --tmpdir=/tmp minifirewall.XXX)
+            save_active_configuration "${tmp_config_file}"
+
+            cmp_result=$(cmp "${ACTIVE_CONFIG}" "${tmp_config_file}" 2>&1)
+            cmp_rc=$?
+
+            if [ ${cmp_rc} -eq 0 ]; then
+                # echo "   config has not changed since latest start"
+                printf "${GREEN}Active configuration is up-to-date.${RESET}\n"
+                rc=0
+            elif [ ${cmp_rc} -eq 1 ]; then
+                diff -u "${ACTIVE_CONFIG}" "${tmp_config_file}" > "${ACTIVE_CONFIG_DIFF}"
+
+                printf "${RED}Active configuration is not up-to-date (minifirewall not restarted after config change?), check %s${RESET}\n" "${ACTIVE_CONFIG_DIFF}"
+                rc=2
+            else
+                printf "${RED}Error while comparing rules:${RESET}\n"
+                printf "${cmp_result}\n"
+                rc=2
+            fi
+
+            rm -f "${tmp_config_file}"
+        fi
+    else
+        printf "${YELLOW}Skipped active configuration check (missing file ${ACTIVE_CONFIG})${RESET}\n"
+        rc=1
+    fi
+    exit ${rc}
 }
 check_unpersisted_state() {
     cmp_bin=$(command -v cmp)
@@ -925,6 +999,9 @@ start() {
     # No need to exit on error anymore
     set +e
 
+    # save active configuration
+    save_active_configuration "${ACTIVE_CONFIG}"
+
     report_state_changes
 }
 
@@ -1011,7 +1088,7 @@ stop() {
         ${IPT6} -X NEEDRESTRICT
     fi
 
-    rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}"
+    rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" "${ACTIVE_CONFIG}"
 
     syslog_info "stopped"
     printf "${GREEN}${BOLD}${PROGNAME} stopped${RESET}\n"
@@ -1137,6 +1214,10 @@ case "${1:-''}" in
 
         stop
         start
+    ;;
+
+    check-active-config)
+        check_active_configuration
     ;;
 
     version)
