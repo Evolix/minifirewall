@@ -37,6 +37,11 @@ DESC="Firewall designed for standalone server"
 
 set -u
 
+if [ "$(id -u)" -ne "0" ] ; then
+    echo "${PROGNAME} must be run as root." >&2
+    exit 1
+fi
+
 # Variables configuration
 #########################
 
