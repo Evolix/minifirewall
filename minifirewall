@@ -310,10 +310,10 @@ check_active_configuration() {
         diff_bin=$(command -v diff)
 
         if [ -z "${cmp_bin}" ]; then
-            printf "${YELLOW}Skipped active configuration check (Can't find cmp(1) command)${RESET}\n"
+            printf "${YELLOW}WARNING: Skipped active configuration check (Can't find cmp(1) command)${RESET}\n"
             rc=1
         elif [ -z "${diff_bin}" ]; then
-            printf "${YELLOW}Skipped active configuration check (Can't find diff(1) command)${RESET}\n"
+            printf "${YELLOW}WARNING: Skipped active configuration check (Can't find diff(1) command)${RESET}\n"
             rc=1
         else
             rm -f "${ACTIVE_CONFIG_DIFF}"
@@ -326,15 +326,15 @@ check_active_configuration() {
 
             if [ ${cmp_rc} -eq 0 ]; then
                 # echo "   config has not changed since latest start"
-                printf "${GREEN}Active configuration is up-to-date.${RESET}\n"
+                printf "${GREEN}OK: Active configuration is up-to-date.${RESET}\n"
                 rc=0
             elif [ ${cmp_rc} -eq 1 ]; then
                 diff -u "${ACTIVE_CONFIG}" "${tmp_config_file}" > "${ACTIVE_CONFIG_DIFF}"
 
-                printf "${RED}Active configuration is not up-to-date (minifirewall not restarted after config change?), check %s${RESET}\n" "${ACTIVE_CONFIG_DIFF}"
+                printf "${RED}CRITICAL: Active configuration is not up-to-date (minifirewall not restarted after config change?), check %s${RESET}\n" "${ACTIVE_CONFIG_DIFF}"
                 rc=2
             else
-                printf "${RED}Error while comparing rules:${RESET}\n"
+                printf "${RED}CRITICAL: Error while comparing rules:${RESET}\n"
                 printf "${cmp_result}\n"
                 rc=2
             fi
@@ -342,7 +342,7 @@ check_active_configuration() {
             rm -f "${tmp_config_file}"
         fi
     else
-        printf "${YELLOW}Skipped active configuration check (missing file ${ACTIVE_CONFIG})${RESET}\n"
+        printf "${YELLOW}WARNING: Skipped active configuration check (missing file ${ACTIVE_CONFIG})${RESET}\n"
         rc=1
     fi
     exit ${rc}
