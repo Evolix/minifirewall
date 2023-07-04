@@ -31,7 +31,7 @@
 
 VERSION="23.02"
 
-NAME="minifirewall"
+PROGNAME="minifirewall"
 # shellcheck disable=SC2034
 DESC="Firewall designed for standalone server"
 
@@ -152,12 +152,12 @@ remove_colors() {
 }
 syslog_info() {
     if [ -x "${LOGGER_BIN}" ]; then
-        ${LOGGER_BIN} -t "${NAME}" -p daemon.info "$1"
+        ${LOGGER_BIN} -t "${PROGNAME}" -p daemon.info "$1"
     fi
 }
 syslog_error() {
     if [ -x "${LOGGER_BIN}" ]; then
-        ${LOGGER_BIN} -t "${NAME}" -p daemon.error "$1"
+        ${LOGGER_BIN} -t "${PROGNAME}" -p daemon.error "$1"
     fi
 }
 sort_values() {
@@ -345,11 +345,11 @@ report_state_changes() {
 
 start() {
     syslog_info "starting"
-    printf "${BOLD}${NAME} starting${RESET}\n"
+    printf "${BOLD}${PROGNAME} starting${RESET}\n"
 
     # Stop and warn if error!
     set -e
-    trap 'printf "${RED}${NAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed" ' INT TERM EXIT
+    trap 'printf "${RED}${PROGNAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed" ' INT TERM EXIT
 
     # sysctl network security settings
     ##################################
@@ -915,7 +915,7 @@ start() {
     trap - INT TERM EXIT
 
     syslog_info "started"
-    printf "${GREEN}${BOLD}${NAME} started${RESET}\n"
+    printf "${GREEN}${BOLD}${PROGNAME} started${RESET}\n"
 
     # No need to exit on error anymore
     set +e
@@ -925,7 +925,7 @@ start() {
 
 stop() {
     syslog_info "stopping"
-    printf "${BOLD}${NAME} stopping${RESET}\n"
+    printf "${BOLD}${PROGNAME} stopping${RESET}\n"
 
     printf "${BLUE}flushing all rules and accepting everything${RESET}\n"
 
@@ -1009,7 +1009,7 @@ stop() {
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}"
 
     syslog_info "stopped"
-    printf "${GREEN}${BOLD}${NAME} stopped${RESET}\n"
+    printf "${GREEN}${BOLD}${PROGNAME} stopped${RESET}\n"
 }
 
 status() {
@@ -1044,7 +1044,7 @@ status_without_numbers() {
 
 reset() {
     syslog_info "resetting"
-    printf "${BOLD}${NAME} resetting${RESET}\n"
+    printf "${BOLD}${PROGNAME} resetting${RESET}\n"
 
     ${IPT} -Z
     if is_ipv6_enabled; then
@@ -1059,19 +1059,41 @@ reset() {
     fi
 
     syslog_info "reset"
-    printf "${GREEN}${BOLD}${NAME} reset${RESET}\n"
+    printf "${GREEN}${BOLD}${PROGNAME} reset${RESET}\n"
 }
 show_version() {
     cat <<END
-${NAME} version ${VERSION}
+${PROGNAME} version ${VERSION}
 
 Copyright 2007-2022 Evolix <info@evolix.fr>.
 
-${NAME} comes with ABSOLUTELY NO WARRANTY.
+${PROGNAME} comes with ABSOLUTELY NO WARRANTY.
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 3
 of the License.
+END
+}
+show_help() {
+    cat <<END
+${PROGNAME} ${DESC}
+
+END
+    show_usage
+}
+show_usage() {
+    cat <<END
+Usage: ${PROGNAME} [COMMAND]
+
+Commands
+ start                  Start minifirewall
+ stop                   Stop minifirewall
+ restart                Stop then start minifirewall
+ status                 Print minifirewall status
+ reset                  Reset iptables tables
+ check-active-config    Check if active config is up-to-date with stored config
+ version                Print version and exit
+ help                   Print this message and exit
 END
 }
 
@@ -1116,9 +1138,14 @@ case "${1:-''}" in
         show_version
     ;;
 
+    help)
+        show_help
+    ;;
+
     *)
-        echo "Usage: $0 {start|stop|restart|status|reset|version}" 
-        exit 1
+        printf "%s: %s: unknown option\n" "${PROGNAME}" "${1}"
+        show_usage
+        exit 128
     ;;
 esac
 
