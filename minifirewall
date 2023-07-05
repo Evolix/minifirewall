@@ -1191,15 +1191,16 @@ safe_start() {
         syslog_info "safe-restart in interactive mode ; if safety lock (${SAFETY_LOCK}) is not removed in the next ${SAFETY_TIMER} seconds, minifirewall will be stopped."
         # Ask for input
         confirm_default="I'm locked out, please stop the firewall"
-        printf "If the restart has locked you out you might see this\nbut you should not be able to type anything.\nPlease confirm you're still here: "
+        # printf "If the restart has locked you out you might see this but you shouldn't be able to type anything.\n"
+        printf "Minifirewall will be stopped in ${SAFETY_TIMER} seconds if you do nothing.\n"
+        printf "Remove \`${SAFETY_LOCK}' or type anything to keep minifirewall started: "
 
         read -r confirm
 
         if [ ! -f "${SAFETY_LOCK}" ]; then
             printf "Safety lock is not there anymore.\nYou've probably been rescued by the safety checks.\n"
         elif [ "${confirm}" != "${confirm_default}" ]; then
-            printf "OK, let's remove the safety lock.\n"
-            rm -f "${SAFETY_LOCK}"
+            rm -f "${SAFETY_LOCK}" && printf "OK. Safety lock is removed.\n"
         fi
     else
         syslog_info "safe-restart in non-interactive mode ; if safety lock (${SAFETY_LOCK}) is not removed in the next ${SAFETY_TIMER} seconds, minifirewall will be stopped."
