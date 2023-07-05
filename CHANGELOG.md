@@ -15,6 +15,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Fixed
 
+* fix interactive mode detection
+
 ### Security
 
 ## [23.07] - 2023-07-04

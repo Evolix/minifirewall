@@ -129,10 +129,8 @@ BOLD=''
 RESET=''
 
 # check if stdout is a terminal...
-if [ -t 0 ]; then
+if [ -t 1 ]; then
     INTERACTIVE=1
-elif [ -t 1 ]; then
-    INTERACTIVE=0
 
     # see if it supports colors...
     ncolors=$(tput colors)
@@ -149,6 +147,8 @@ elif [ -t 1 ]; then
         BOLD=$(tput bold)
         RESET='\e[m'
     fi
+else
+    INTERACTIVE=0
 fi
 readonly INTERACTIVE
 
