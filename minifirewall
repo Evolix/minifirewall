@@ -1198,9 +1198,9 @@ safe_start() {
         read -r confirm
 
         if [ ! -f "${SAFETY_LOCK}" ]; then
-            printf "Safety lock is not there anymore.\nYou've probably been rescued by the safety checks.\n"
+            printf "${YELLOW}Safety lock is not there anymore.\nYou've probably been rescued by the safety checks.\n${BOLD}Minifirewall is probably stopped.${RESET}\n"
         elif [ "${confirm}" != "${confirm_default}" ]; then
-            rm -f "${SAFETY_LOCK}" && printf "OK. Safety lock is removed.\n"
+            rm -f "${SAFETY_LOCK}" && printf "${GREEN}OK. Safety lock is removed.${RESET}\n"
         fi
     else
         syslog_info "safe-restart in non-interactive mode ; if safety lock (${SAFETY_LOCK}) is not removed in the next ${SAFETY_TIMER} seconds, minifirewall will be stopped."
