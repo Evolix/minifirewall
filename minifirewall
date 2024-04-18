@@ -555,6 +555,10 @@ start() {
         ${IPT6} -A LOG_ACCEPT -j ACCEPT
     fi
 
+    if is_docker_enabled; then
+        ${IPT} -N MINIFW-DOCKER-INPUT-MANUAL
+    fi
+
     # Source additional rules and commands
     # * from legacy configuration file (/etc/default/minifirewall)
     # * from configuration directory (/etc/minifirewall.d/*)
@@ -663,7 +667,7 @@ start() {
         ${IPT} -A MINIFW-DOCKER-PUB -j MINIFW-DOCKER-PRIVILEGED
         ${IPT} -A MINIFW-DOCKER-PUB -j RETURN
 
-        ${IPT} -N MINIFW-DOCKER-INPUT-MANUAL
+        # Chain MINIFW-DOCKER-INPUT-MANUAL is created earlier, to allow usage in additionnal config/command files
         ${IPT} -A MINIFW-DOCKER-INPUT-MANUAL -j MINIFW-DOCKER-PUB
         ${IPT} -A MINIFW-DOCKER-INPUT-MANUAL -j RETURN
 
