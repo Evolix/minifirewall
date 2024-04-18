@@ -663,6 +663,10 @@ start() {
         ${IPT} -A MINIFW-DOCKER-PUB -j MINIFW-DOCKER-PRIVILEGED
         ${IPT} -A MINIFW-DOCKER-PUB -j RETURN
 
+        ${IPT} -N MINIFW-DOCKER-INPUT-MANUAL
+        ${IPT} -A MINIFW-DOCKER-INPUT-MANUAL -j MINIFW-DOCKER-PUB
+        ${IPT} -A MINIFW-DOCKER-INPUT-MANUAL -j RETURN
+
         # Flush DOCKER-USER if exist, create it if absent
         if chain_exists 'DOCKER-USER'; then
             ${IPT} -F DOCKER-USER
@@ -670,8 +674,8 @@ start() {
             ${IPT} -N DOCKER-USER
         fi;
 
-        # Pipe new connection through MINIFW-DOCKER-PUB
-        ${IPT} -A DOCKER-USER -i ${INT} -m state  --state NEW -j MINIFW-DOCKER-PUB
+        # Pipe new connection through MINIFW-DOCKER-INPUT-MANUAL
+        ${IPT} -A DOCKER-USER -i ${INT} -m state  --state NEW -j MINIFW-DOCKER-INPUT-MANUAL
         ${IPT} -A DOCKER-USER -j RETURN
     fi
 
@@ -1062,6 +1066,8 @@ stop() {
         ${IPT} -F DOCKER-USER
         ${IPT} -A DOCKER-USER -j RETURN
 
+        ${IPT} -F MINIFW-DOCKER-INPUT-MANUAL
+        ${IPT} -X MINIFW-DOCKER-INPUT-MANUAL
         ${IPT} -F MINIFW-DOCKER-PUB
         ${IPT} -X MINIFW-DOCKER-PUB
         ${IPT} -F MINIFW-DOCKER-PRIVILEGED

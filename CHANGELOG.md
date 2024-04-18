@@ -6,6 +6,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Added
 
 * safe-start and safe-restart
+* Chain MINIFW-DOCKER-INPUT-MANUAL for more granular/manual filtering of incoming traffic to services inside docker
 
 ### Changed
 
