@@ -826,12 +826,12 @@ start() {
         if is_ipv6 ${IP}; then
             if is_ipv6_enabled; then
                 ${IPT6} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
-                ${IPT6} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${IP} -m state --state ESTABLISHED,RELATED -j ACCEPT
+                ${IPT6} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${IP} -m state --state ESTABLISHED -j ACCEPT
                 ${IPT6} -A OUTPUT -o ${INT} -p udp -d ${IP} --dport 53 --match state --state NEW -j ACCEPT
             fi
         else 
             ${IPT} -A INPUT -p tcp ! --syn --sport 53 --dport ${PORTSUSER} -s ${IP} -j ACCEPT
-            ${IPT} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${IP} -m state --state ESTABLISHED,RELATED -j ACCEPT
+            ${IPT} -A INPUT -p udp --sport 53 --dport ${PORTSUSER} -s ${IP} -m state --state ESTABLISHED -j ACCEPT
             ${IPT} -A OUTPUT -o ${INT} -p udp -d ${IP} --dport 53 --match state --state NEW -j ACCEPT
         fi
     done
@@ -951,10 +951,10 @@ start() {
         if [ -n "${server_ip}" ] && [ -n "${server_port}" ]; then
             if is_ipv6 ${server_ip}; then
                 if is_ipv6_enabled; then
-                    ${IPT6} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+                    ${IPT6} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED -j ACCEPT
                 fi
             else 
-                ${IPT} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED,RELATED -j ACCEPT
+                ${IPT} -A INPUT -p tcp --sport "${server_port}" --dport 1024:65535 -s "${server_ip}" -m state --state ESTABLISHED -j ACCEPT
             fi
         else
             printf "${RED}ERROR: unrecognized syntax for BACKUPSERVERS '%s\`. Use space-separated IP:PORT tuples.${RESET}\n" "${server}" >&2
@@ -998,9 +998,9 @@ start() {
         ${IPT6} -A OUTPUT -o ${INT} -p udp --dport 33434:33523 --match state --state NEW -j ACCEPT
     fi
 
-    ${IPT} -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
+    ${IPT} -A OUTPUT -p udp --match state --state ESTABLISHED -j ACCEPT
     if is_ipv6_enabled; then
-        ${IPT6} -A OUTPUT -p udp --match state --state ESTABLISHED,RELATED -j ACCEPT
+        ${IPT6} -A OUTPUT -p udp --match state --state ESTABLISHED -j ACCEPT
     fi
 
     ${IPT} -A OUTPUT -p udp -j DROP
