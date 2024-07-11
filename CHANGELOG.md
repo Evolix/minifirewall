@@ -5,6 +5,20 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [24.07] - 2024-07-11
+
+### Added
+
 * safe-start and safe-restart
 * Chain MINIFW-DOCKER-INPUT-MANUAL for more granular/manual filtering of incoming traffic to services inside docker
 
@@ -14,11 +28,14 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Removed
 
+* Removed RELATED state match
+
 ### Fixed
 
 * fix interactive mode detection
 
 ### Security
+
 
 ## [23.07] - 2023-07-04
 
