@@ -1019,6 +1019,10 @@ start() {
     # No need to exit on error anymore
     set +e
 
+    syslog_info "Fail2Ban restart (if enabled)"
+    printf "${BLUE}restart Fail2Ban (if enabled)${RESET}\n"
+    fail2ban_restart
+
     # save active configuration
     save_active_configuration "${ACTIVE_CONFIG}"
 
@@ -1224,6 +1228,11 @@ safe_start() {
     else
         syslog_info "safe-restart in non-interactive mode ; if safety lock (${SAFETY_LOCK}) is not removed in the next $(safety_timer) seconds, minifirewall will be stopped."
     fi
+}
+
+fail2ban_restart() {
+    # restart Fail2Ban if enabled
+    systemctl --quiet is-enabled fail2ban 2>/dev/null && systemctl restart fail2ban
 }
 
 show_version() {
