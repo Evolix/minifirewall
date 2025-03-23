@@ -9,6 +9,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Changed
 
+* extract is_color_enabled() function
+
 ### Deprecated
 
 ### Removed
