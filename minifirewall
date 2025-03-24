@@ -128,16 +128,16 @@ WHITE=''
 BOLD=''
 RESET=''
 
-# shellcheck disable=SC2086
 is_color_enabled() {
     # Support NO_COLOR / https://no-color.org/
-    if [ ${NO_COLOR:-0} = 1 ]; then
+    if [ -n "${NO_COLOR:-''}" ] && [ "${NO_COLOR:-''}" != "0" ]; then
+        return 1
+    else
         # see if it supports colors...
         ncolors=$(tput colors)
 
-        test ${NO_COLOR:-0} != 1 && test -n "${ncolors}"
-    else
-        return 1
+        # shellcheck disable=SC2086
+        test -n "${ncolors}" && test ${ncolors} -ge 8
     fi
 }
 
