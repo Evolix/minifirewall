@@ -10,6 +10,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Changed
 
 * extract is_color_enabled() function
+* review blacklist-*.sh scripts: use ipset, MD5 verification, etc.
 
 ### Deprecated
 
