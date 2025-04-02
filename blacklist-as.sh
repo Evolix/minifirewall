@@ -33,12 +33,9 @@ done
 /sbin/iptables -D NEEDRESTRICT -m set --match-set asn-blocklist-v4 src -j DROP >/dev/null 2>&1
 /sbin/ipset destroy asn-blocklist-v4 >/dev/null 2>&1
 
-/sbin/ipset create asn-blocklist-v4 hash:net
+/sbin/ipset create asn-blocklist-v4 hash:net comment
 
-for i in $(cat $rpkideny_file); do
-    BLOCK=$(echo $i | cut -d, -f2)
-    /sbin/ipset add asn-blocklist-v4 $BLOCK
-done
+awk -F, '{print "add asn-blocklist-v4 "$2" comment "$1}' $rpkideny_file | /sbin/ipset restore
 
 /sbin/iptables -I NEEDRESTRICT -m set --match-set asn-blocklist-v4 src -j DROP
 #/sbin/iptables -I INPUT -m set --match-set asn-blocklist-v4 src -j DROP

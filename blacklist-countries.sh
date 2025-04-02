@@ -16,18 +16,15 @@ GET http://antispam00.evolix.org/spam/ripe.cidr > ripe.cidr
 md5sum --status -c ripe.cidr.md5 || exit
 
 for i in CN KR RU; do
-    grep "^$i|" ripe.cidr >> $ripedeny_file
+    awk -F"|" "/${i}/"'{print "add countries-blocklist-v4 "$2" comment "$1}' ripe.cidr >> $ripedeny_file
 done
 
 /sbin/iptables -D NEEDRESTRICT -m set --match-set countries-blocklist-v4 src -j DROP >/dev/null 2>&1
 /sbin/ipset destroy countries-blocklist-v4 >/dev/null 2>&1
 
-/sbin/ipset create countries-blocklist-v4 hash:net
+/sbin/ipset create countries-blocklist-v4 hash:net comment
 
-for i in $(cat $ripedeny_file); do
-    BLOCK=$(echo $i | cut -d"|" -f2)
-    /sbin/ipset add countries-blocklist-v4 $BLOCK
-done
+/sbin/ipset restore < "$ripedeny_file"
 
 /sbin/iptables -I NEEDRESTRICT -m set --match-set countries-blocklist-v4 src -j DROP
 #/sbin/iptables -I INPUT -m set --match-set countries-blocklist-v4 src -j DROP

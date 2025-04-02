@@ -11,6 +11,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 * extract is_color_enabled() function
 * review blacklist-*.sh scripts: use ipset, MD5 verification, etc.
+* blacklist-*.sh scripts: use "ipset restore" instead of multiple "ipset add"
 
 ### Deprecated
 

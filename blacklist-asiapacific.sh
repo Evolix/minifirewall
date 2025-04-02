@@ -20,12 +20,9 @@ mv apnic.cidr $apnicdeny_file
 /sbin/iptables -D NEEDRESTRICT -m set --match-set apnic-blocklist-v4 src -j DROP >/dev/null 2>&1
 /sbin/ipset destroy apnic-blocklist-v4 >/dev/null 2>&1
 
-/sbin/ipset create apnic-blocklist-v4 hash:net
+/sbin/ipset create apnic-blocklist-v4 hash:net comment
 
-for i in $(cat $apnicdeny_file); do
-    BLOCK=$(echo $i | cut -d"|" -f2)
-    /sbin/ipset add apnic-blocklist-v4 $BLOCK
-done
+awk -F"|" '{print "add apnic-blocklist-v4  "$2" comment "$1}' $apnicdeny_file | /sbin/ipset restore
 
 /sbin/iptables -I NEEDRESTRICT -m set --match-set apnic-blocklist-v4 src -j DROP
 #/sbin/iptables -I INPUT -m set --match-set apnic-blocklist-v4 src -j DROP
