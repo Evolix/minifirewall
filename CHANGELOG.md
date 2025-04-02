@@ -19,6 +19,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Fixed
 
+* blacklist-*.sh scripts: use INPUT chain instead of NEEDRESTRICT, as this chain currently can't be used in /etc/minifirewall.d
+
 ### Security
 
 ## [24.07] - 2024-07-11
