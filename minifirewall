@@ -77,6 +77,7 @@ PORTSUSER='1024:65535'
 INT=''
 IPV6=''
 DOCKER=''
+DOCKER_LEGACY='on'
 INTLAN=''
 TRUSTEDIPS=''
 PRIVILEGIEDIPS=''
@@ -197,6 +198,9 @@ is_ipv6_enabled() {
 }
 is_docker_enabled() {
     test "${DOCKER}" = "on"
+}
+is_docker_legacy_enabled() {
+    test "${DOCKER_LEGACY}" = "on"
 }
 is_proxy_enabled() {
     test "${PROXY}" = "on"
@@ -766,27 +770,33 @@ start() {
 
     if is_docker_enabled; then
         # WARN: IPv6 not yet supported
+        IPT_DOCKCER_OPTION='-m conntrack --ctorigdstport'
+
+        # Revert to the 'old' (and incorrect) mode.
+        if is_docker_legacy_enabled; then
+            IPT_DOCKCER_OPTION='--dport'
+        fi
 
         # Public services defined in SERVICESTCP1 & SERVICESUDP1
         for dstport in ${SERVICESTCP1}; do
-            ${IPT} -I MINIFW-DOCKER-PUB -p tcp --dport "${dstport}" -j RETURN
+            ${IPT} -I MINIFW-DOCKER-PUB -p tcp ${IPT_DOCKCER_OPTION} "${dstport}" -j RETURN
         done
 
         for dstport in ${SERVICESUDP1}; do
-            ${IPT} -I MINIFW-DOCKER-PUB -p udp --dport "${dstport}" -j RETURN
+            ${IPT} -I MINIFW-DOCKER-PUB -p udp ${IPT_DOCKCER_OPTION} "${dstport}" -j RETURN
         done
 
         # Privileged services (accessible from privileged & trusted IPs)
         for dstport in ${SERVICESTCP2}; do
             for srcip in ${PRIVILEGIEDIPS}; do
                 if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" ${IPT_DOCKCER_OPTION} "${dstport}" -j RETURN
                 fi
             done
 
             for srcip in ${TRUSTEDIPS}; do
                 if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" ${IPT_DOCKCER_OPTION} "${dstport}" -j RETURN
                 fi
             done
         done
@@ -794,13 +804,13 @@ start() {
         for dstport in ${SERVICESUDP2}; do
             for srcip in ${PRIVILEGIEDIPS}; do
                 if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" ${IPT_DOCKCER_OPTION} "${dstport}" -j RETURN
                 fi
             done
 
             for srcip in ${TRUSTEDIPS}; do
                 if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" ${IPT_DOCKCER_OPTION} "${dstport}" -j RETURN
                 fi
             done
         done
@@ -809,7 +819,7 @@ start() {
         for dstport in ${SERVICESTCP3}; do
             for srcip in ${TRUSTEDIPS}; do
                 if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-TRUSTED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
+                    ${IPT} -I MINIFW-DOCKER-TRUSTED -p tcp -s "${srcip}" ${IPT_DOCKCER_OPTION} "${dstport}" -j RETURN
                 fi
             done
         done
@@ -817,7 +827,7 @@ start() {
         for dstport in ${SERVICESUDP3}; do
             for srcip in ${TRUSTEDIPS}; do
                 if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-TRUSTED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
+                    ${IPT} -I MINIFW-DOCKER-TRUSTED -p udp -s "${srcip}" ${IPT_DOCKCER_OPTION} "${dstport}" -j RETURN
                 fi
             done
         done

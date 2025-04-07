@@ -32,8 +32,6 @@ Edit /etc/default/minifirewall file:
 To use minifirewall with Docker you need to change the variable `DOCKER='on'`
 Then, authorisation for public/semi-public/private ports will also work for dockerized services
 
-**WARNING** : When the port mapping on the host is different than in the container (ie: listen on :8090 on the host, but the service in the container listen on :8080)
-you need to use the port used by the container (ie: 8080) in the public/semi-public/private port list
 
 ## Usage
 
