@@ -555,6 +555,8 @@ start() {
     ${IPT} -N LOG_ACCEPT
     ${IPT} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
     ${IPT} -A LOG_ACCEPT -j ACCEPT
+    # Chain for restrictions (blacklist IPs/ranges)
+    ${IPT} -N NEEDRESTRICT
     if is_ipv6_enabled; then
         ${IPT6} -N LOG_DROP
         ${IPT6} -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
@@ -562,8 +564,8 @@ start() {
         ${IPT6} -N LOG_ACCEPT
         ${IPT6} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
         ${IPT6} -A LOG_ACCEPT -j ACCEPT
+        ${IPT6} -N NEEDRESTRICT
     fi
-
     if is_docker_enabled; then
         ${IPT} -N MINIFW-DOCKER-INPUT-MANUAL
     fi
@@ -632,12 +634,6 @@ start() {
             ${IPT} -I ONLYPRIVILEGIED -s ${ip} -j ACCEPT
         fi
     done
-
-    # Chain for restrictions (blacklist IPs/ranges)
-    ${IPT} -N NEEDRESTRICT
-    if is_ipv6_enabled; then
-        ${IPT6} -N NEEDRESTRICT
-    fi
 
     # We allow all on loopback interface
     ${IPT} -A INPUT -i lo -j ACCEPT
