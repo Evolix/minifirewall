@@ -29,7 +29,7 @@
 # Description:       Firewall designed for standalone server
 ### END INIT INFO
 
-VERSION="24.07"
+VERSION="25.04-pre1"
 
 PROGNAME="minifirewall"
 # shellcheck disable=SC2034
@@ -220,16 +220,21 @@ chain_exists() {
 source_file_or_error() {
     file=$1
     syslog_info "sourcing \`${file}'"
-    printf "${BLUE}sourcing \`%s'${RESET}\n" "${file}"
+    printf "${BLUE}sourcing \`%s': ${RESET}" "${file}"
 
     tmpfile=$(mktemp --tmpdir=/tmp minifirewall.XXX)
     . "${file}" 2>"${tmpfile}" >&2
 
     if [ -s "${tmpfile}" ]; then
-            syslog_error "Error while sourcing ${file}"
-            printf "${RED}%s returns standard or error output (see below). Stopping.${RESET}\n" ${file} >&2
-            cat "${tmpfile}"
-            exit 1
+        syslog_error "Error while sourcing ${file}"
+    
+        printf "${RED}Error${RESET}\n"
+        
+        printf "${RED}%s returns standard or error output (see below). Stopping.${RESET}\n" "${file}" >&2
+        cat "${tmpfile}" >&2
+        exit 1
+    else
+        printf "${GREEN}Ok${RESET}\n"
     fi
     rm -f "${tmpfile}"
 }
@@ -471,11 +476,15 @@ start() {
     # Set 1 to log packets with inconsistent address (default)
     : "${SYSCTL_LOG_MARTIANS:=1}"
 
+    syslog_info "configuring sysctl"
+    printf "${BLUE}configuring sysctl: ${RESET}"
+
     if [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "1" ] || [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "0" ]; then
         echo "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
         # Apparently not applicable to IPv6
     else
-        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS" "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" >&2
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS" "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" >&2
         exit 1
     fi
 
@@ -483,7 +492,8 @@ start() {
         echo "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
         # Apparently not applicable to IPv6
     else
-        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES" "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" >&2
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES" "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" >&2
         exit 1
     fi
 
@@ -497,7 +507,8 @@ start() {
             done
         fi
     else
-        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ACCEPT_SOURCE_ROUTE" "${SYSCTL_ACCEPT_SOURCE_ROUTE}" >&2
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ACCEPT_SOURCE_ROUTE" "${SYSCTL_ACCEPT_SOURCE_ROUTE}" >&2
         exit 1
     fi
 
@@ -505,7 +516,8 @@ start() {
         echo "${SYSCTL_TCP_SYNCOOKIES}" > /proc/sys/net/ipv4/tcp_syncookies
         # Apparently not applicable to IPv6
     else
-        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_TCP_SYNCOOKIES" "${SYSCTL_TCP_SYNCOOKIES}" >&2
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_TCP_SYNCOOKIES" "${SYSCTL_TCP_SYNCOOKIES}" >&2
         exit 1
     fi
 
@@ -522,7 +534,8 @@ start() {
             done
         fi
     else
-        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_ICMP_REDIRECTS" "${SYSCTL_ICMP_REDIRECTS}" >&2
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_REDIRECTS" "${SYSCTL_ICMP_REDIRECTS}" >&2
         exit 1
     fi
 
@@ -532,7 +545,8 @@ start() {
         done
         # Apparently not applicable to IPv6
     else
-        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_RP_FILTER" "${SYSCTL_RP_FILTER}" >&2
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_RP_FILTER" "${SYSCTL_RP_FILTER}" >&2
         exit 1
     fi
 
@@ -542,9 +556,12 @@ start() {
         done
         # Apparently not applicable to IPv6
     else
-        printf "${RED}ERROR: invalid %s value '%s', must be '0' or '1'.\n" "SYSCTL_LOG_MARTIANS" "${SYSCTL_LOG_MARTIANS}" >&2
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_LOG_MARTIANS" "${SYSCTL_LOG_MARTIANS}" >&2
         exit 1
     fi
+
+    printf "${GREEN}Ok${RESET}\n"
 
     # IPTables configuration
     ########################
@@ -574,6 +591,9 @@ start() {
     # * from legacy configuration file (/etc/default/minifirewall)
     # * from configuration directory (/etc/minifirewall.d/*)
     source_includes
+
+    syslog_info "executing macros"
+    printf "${BLUE}executing macros: ${RESET}"
 
     # IP/ports lists are sorted to have consistent ordering
     # You can disable this feature by simply commenting the following lines
@@ -1015,6 +1035,8 @@ start() {
 
     # Finish
     ########################
+
+    printf "${GREEN}Ok${RESET}\n"
 
     trap - INT TERM EXIT
 
