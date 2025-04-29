@@ -48,10 +48,10 @@ fi
 config_file="/etc/default/minifirewall"
 includes_dir="/etc/minifirewall.d"
 
-pre_start_hook_file="${includes_dir}/pre-start-hook"
-post_start_hook_file="${includes_dir}/post-start-hook"
-pre_stop_hook_file="${includes_dir}/pre-stop-hook"
-post_stop_hook_file="${includes_dir}/post-stop-hook"
+pre_start_hook_file="${includes_dir}/pre-start"
+post_start_hook_file="${includes_dir}/post-start"
+pre_stop_hook_file="${includes_dir}/pre-stop"
+post_stop_hook_file="${includes_dir}/post-stop"
 
 # iptables paths
 IPT=$(command -v iptables)
