@@ -29,7 +29,7 @@
 # Description:       Firewall designed for standalone server
 ### END INIT INFO
 
-VERSION="25.04-pre1"
+VERSION="25.04-pre2"
 
 PROGNAME="minifirewall"
 # shellcheck disable=SC2034
@@ -47,6 +47,11 @@ fi
 
 config_file="/etc/default/minifirewall"
 includes_dir="/etc/minifirewall.d"
+
+pre_start_hook_file="${includes_dir}/pre-start-hook"
+post_start_hook_file="${includes_dir}/post-start-hook"
+pre_stop_hook_file="${includes_dir}/pre-stop-hook"
+post_stop_hook_file="${includes_dir}/post-stop-hook"
 
 # iptables paths
 IPT=$(command -v iptables)
@@ -290,7 +295,17 @@ source_configuration() {
 }
 include_files() {
     if [ -d "${includes_dir}" ]; then
-        find ${includes_dir} -type f -readable -not -name '*.*' | sort -h
+        # find readable files, excluding dotted files and hooks
+        find ${includes_dir} \
+            -type f \
+            -readable \
+            -not \( \
+                -name '*.*' \
+                -o -wholename "${pre_start_hook_file}" \
+                -o -wholename "${post_start_hook_file}" \
+                -o -wholename "${pre_stop_hook_file}" \
+                -o -wholename "${post_stop_hook_file}" \
+            \) | sort -h
     else
         echo ""
     fi
@@ -455,6 +470,10 @@ start() {
     # Stop and warn if error!
     set -e
     trap 'printf "${RED}${PROGNAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed" ' INT TERM EXIT
+
+    if [ -f "${pre_start_hook_file}" ]; then
+        source_file_or_error "${pre_start_hook_file}"
+    fi
 
     # sysctl network security settings
     ##################################
@@ -1038,6 +1057,10 @@ start() {
 
     printf "${GREEN}Ok${RESET}\n"
 
+    if [ -f "${post_start_hook_file}" ]; then
+        source_file_or_error "${post_start_hook_file}"
+    fi
+
     trap - INT TERM EXIT
 
     syslog_info "started"
@@ -1055,6 +1078,10 @@ start() {
 stop() {
     syslog_info "stopping"
     printf "${BOLD}${PROGNAME} stopping${RESET}\n"
+
+    if [ -f "${pre_stop_hook_file}" ]; then
+        source_file_or_error "${pre_stop_hook_file}"
+    fi
 
     printf "${BLUE}flushing all rules and accepting everything${RESET}\n"
 
@@ -1135,6 +1162,10 @@ stop() {
         ${IPT6} -X ONLYPRIVILEGIED
         ${IPT6} -X ONLYTRUSTED
         ${IPT6} -X NEEDRESTRICT
+    fi
+
+    if [ -f "${post_stop_hook_file}" ]; then
+        source_file_or_error "${post_stop_hook_file}"
     fi
 
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" "${ACTIVE_CONFIG}"

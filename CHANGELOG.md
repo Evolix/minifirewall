@@ -6,6 +6,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Added
 
 * support NO_COLOR env variable (cf. https://no-color.org/)
+* Add hooks (pre-start, post-start, pre-stop, post-stop)
 
 ### Changed
 
