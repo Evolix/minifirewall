@@ -46,12 +46,12 @@ fi
 #########################
 
 config_file="/etc/default/minifirewall"
-includes_dir="/etc/minifirewall.d"
+main_includes_dir="/etc/minifirewall.d"
 
-pre_start_hook_file="${includes_dir}/pre-start"
-post_start_hook_file="${includes_dir}/post-start"
-pre_stop_hook_file="${includes_dir}/pre-stop"
-post_stop_hook_file="${includes_dir}/post-stop"
+pre_start_hook_dir="${main_includes_dir}/pre-start.d"
+post_start_hook_dir="${main_includes_dir}/post-start.d"
+pre_stop_hook_dir="${main_includes_dir}/pre-stop.d"
+post_stop_hook_dir="${main_includes_dir}/post-stop.d"
 
 # iptables paths
 IPT=$(command -v iptables)
@@ -273,7 +273,7 @@ source_configuration() {
         # They break if any iptables/ip6tables command is found in the configuration file
 
         # echo "iptables/ip6tables commands found in ${config_file}." >&2
-        # echo "Move them in included files (in ${includes_dir})." >&2
+        # echo "Move them in included files (in ${main_includes_dir})." >&2
         # exit 1
     fi
 
@@ -294,26 +294,24 @@ source_configuration() {
     fi
 }
 include_files() {
-    if [ -d "${includes_dir}" ]; then
+    path=$1
+    if [ -d "${path}" ]; then
         # find readable files, excluding dotted files and hooks
-        find ${includes_dir} \
+        find ${path} \
+            -maxdepth 1 \
             -type f \
             -readable \
-            -not \( \
-                -name '*.*' \
-                -o -wholename "${pre_start_hook_file}" \
-                -o -wholename "${post_start_hook_file}" \
-                -o -wholename "${pre_stop_hook_file}" \
-                -o -wholename "${post_stop_hook_file}" \
-            \) | sort -h
+            -not -name '*.*' \
+        | sort -h
     else
         echo ""
     fi
 }
 source_includes() {
-    if [ -d "${includes_dir}" ]; then
-        for include_file in $(include_files); do
-            source_file_or_error "${include_file}"
+    path=$1
+    if [ -d "${path}" ]; then
+        for file in $(include_files "${path}"); do
+            source_file_or_error "${file}"
         done
     fi
 }
@@ -330,11 +328,11 @@ save_active_configuration() {
     echo "# ${config_file}" >> "${dest_file}"
     filter_config_file "${config_file}" >> "${dest_file}"
 
-    found_include_files=$(include_files)
-    if [ -n "${found_include_files}" ]; then
-        for include_file in ${found_include_files}; do
-            echo "# ${include_file}" >> "${dest_file}"
-            filter_config_file "${include_file}" >> "${dest_file}"
+    found_files=$(include_files "${main_includes_dir}")
+    if [ -n "${found_files}" ]; then
+        for file in ${found_files}; do
+            echo "# ${file}" >> "${dest_file}"
+            filter_config_file "${file}" >> "${dest_file}"
         done
     fi
 }
@@ -471,8 +469,8 @@ start() {
     set -e
     trap 'printf "${RED}${PROGNAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed" ' INT TERM EXIT
 
-    if [ -f "${pre_start_hook_file}" ]; then
-        source_file_or_error "${pre_start_hook_file}"
+    if [ -d "${pre_start_hook_dir}" ]; then
+        source_includes "${pre_start_hook_dir}"
     fi
 
     # sysctl network security settings
@@ -609,7 +607,7 @@ start() {
     # Source additional rules and commands
     # * from legacy configuration file (/etc/default/minifirewall)
     # * from configuration directory (/etc/minifirewall.d/*)
-    source_includes
+    source_includes "${main_includes_dir}"
 
     syslog_info "executing macros"
     printf "${BLUE}executing macros: ${RESET}"
@@ -1057,8 +1055,8 @@ start() {
 
     printf "${GREEN}Ok${RESET}\n"
 
-    if [ -f "${post_start_hook_file}" ]; then
-        source_file_or_error "${post_start_hook_file}"
+    if [ -d "${post_start_hook_dir}" ]; then
+        source_includes "${post_start_hook_dir}"
     fi
 
     trap - INT TERM EXIT
@@ -1079,8 +1077,8 @@ stop() {
     syslog_info "stopping"
     printf "${BOLD}${PROGNAME} stopping${RESET}\n"
 
-    if [ -f "${pre_stop_hook_file}" ]; then
-        source_file_or_error "${pre_stop_hook_file}"
+    if [ -d "${pre_stop_hook_dir}" ]; then
+        source_includes "${pre_stop_hook_dir}"
     fi
 
     printf "${BLUE}flushing all rules and accepting everything${RESET}\n"
@@ -1164,8 +1162,8 @@ stop() {
         ${IPT6} -X NEEDRESTRICT
     fi
 
-    if [ -f "${post_stop_hook_file}" ]; then
-        source_file_or_error "${post_stop_hook_file}"
+    if [ -d "${post_stop_hook_dir}" ]; then
+        source_includes "${post_stop_hook_dir}"
     fi
 
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" "${ACTIVE_CONFIG}"
