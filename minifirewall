@@ -328,6 +328,8 @@ save_active_configuration() {
     echo "# ${config_file}" >> "${dest_file}"
     filter_config_file "${config_file}" >> "${dest_file}"
 
+    # NOTE: hook directories are ignored
+    # only the main directory is scanned for configuration saving
     found_files=$(include_files "${main_includes_dir}")
     if [ -n "${found_files}" ]; then
         for file in ${found_files}; do
