@@ -30,10 +30,21 @@ Edit /etc/default/minifirewall file:
 ### Docker
 
 To use minifirewall with Docker you need to change the variable `DOCKER='on'`
-Then, authorisation for public/semi-public/private ports will also work for dockerized services
+By default, exposed services won't be reachable outside the host.
 
-**WARNING** : When the port mapping on the host is different than in the container (ie: listen on :8090 on the host, but the service in the container listen on :8080)
-you need to use the port used by the container (ie: 8080) in the public/semi-public/private port list
+If you need to allow/deny access, you can rely on the chain `MINIFW-DOCKER-INPUT-MANUAL`
+Note : this chain is only crossed by incoming 'tcp syn' packets.
+
+~~~
+# Open publicly the docker service exposed on port 80
+${IPT} -I MINIFW-DOCKER-INPUT-MANUAL -p tcp -m conntrack --ctorigdstport 80 -j RETURN
+
+# Open to 192.0.2.0/24 the docker service exposed on port 22
+${IPT} -I MINIFW-DOCKER-INPUT-MANUAL -p tcp -s 192.0.2/24 -m conntrack --ctorigdstport 22 -j RETURN
+
+# Block 192.0.2.42 access the docker service exposed on port 22
+${IPT} -I MINIFW-DOCKER-INPUT-MANUAL -p tcp -s 192.0.42 -m conntrack --ctorigdstport 80 -j DROP
+~~~
 
 ## Usage
 
