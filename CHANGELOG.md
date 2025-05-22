@@ -6,6 +6,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Added
 
 * support NO_COLOR env variable (cf. https://no-color.org/)
+* Allow docker containers on the default bridge (docker0) to talk to host services
 
 ### Changed
 
@@ -18,6 +19,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 ### Deprecated
 
 ### Removed
+
+* Don't expose docker services via Public/Semi-public/Private macros
 
 ### Fixed
 
