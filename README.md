@@ -62,7 +62,7 @@ If you use different docker network bridge, you'll need to add rules for your ne
 /sbin/iptables -I INPUT -p tcp --sport 1024:65535 -s 172.16.0.0/12 -d 172.17.0.1 -j ACCEPT
 ~~~
 
-If you want to have fine-grained rules for controling the communication from containers to the host services, you can set `DOCKER='advanced'`. 
+If you want to have fine-grained rules for controling the communication from containers to the host services, you can set `DOCKER='manual'`. 
 This way, no rules allowing communication from containers host services are created.
 
 You can then create your own set of rules.

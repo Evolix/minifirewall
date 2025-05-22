@@ -196,10 +196,10 @@ is_ipv6_enabled() {
     test "${IPV6}" != "off"
 }
 is_docker_enabled() {
-    test "${DOCKER}" = "on" || test "${DOCKER}" = "advanced"
+    test "${DOCKER}" = "on" || test "${DOCKER}" = "manual"
 }
-is_docker_advanced() {
-    test "${DOCKER}" = "advanced"
+is_docker_manual() {
+    test "${DOCKER}" = "manual"
 }
 is_proxy_enabled() {
     test "${PROXY}" = "on"
@@ -697,9 +697,9 @@ start() {
         ${IPT} -A DOCKER-USER -i ${INT} -m state  --state NEW -j MINIFW-DOCKER-INPUT-MANUAL
         ${IPT} -A DOCKER-USER -j RETURN
 
-        # Create basic rules to allow container to talk to the host (unless advanced mode)
+        # Create basic rules to allow container to talk to the host (unless manual mode)
         # via the default docker bridge
-        if ! is_docker_advanced; then
+        if ! is_docker_manual; then
             /sbin/iptables -I INPUT -i docker0 -p tcp --sport 1024:65535 -s 172.16.0.0/12 -d 172.17.0.1 -j ACCEPT
         fi
     fi
