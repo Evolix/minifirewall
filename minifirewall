@@ -196,7 +196,10 @@ is_ipv6_enabled() {
     test "${IPV6}" != "off"
 }
 is_docker_enabled() {
-    test "${DOCKER}" = "on"
+    test "${DOCKER}" = "on" || test "${DOCKER}" = "manual"
+}
+is_docker_manual() {
+    test "${DOCKER}" = "manual"
 }
 is_proxy_enabled() {
     test "${PROXY}" = "on"
@@ -680,21 +683,8 @@ start() {
     done
 
     if is_docker_enabled; then
-        # WARN: IPv6 not yet supported for Docker rules
-        ${IPT} -N MINIFW-DOCKER-TRUSTED
-        ${IPT} -A MINIFW-DOCKER-TRUSTED -j DROP
-
-        ${IPT} -N MINIFW-DOCKER-PRIVILEGED
-        ${IPT} -A MINIFW-DOCKER-PRIVILEGED -j MINIFW-DOCKER-TRUSTED
-        ${IPT} -A MINIFW-DOCKER-PRIVILEGED -j RETURN
-
-        ${IPT} -N MINIFW-DOCKER-PUB
-        ${IPT} -A MINIFW-DOCKER-PUB -j MINIFW-DOCKER-PRIVILEGED
-        ${IPT} -A MINIFW-DOCKER-PUB -j RETURN
-
         # Chain MINIFW-DOCKER-INPUT-MANUAL is created earlier, to allow usage in additionnal config/command files
-        ${IPT} -A MINIFW-DOCKER-INPUT-MANUAL -j MINIFW-DOCKER-PUB
-        ${IPT} -A MINIFW-DOCKER-INPUT-MANUAL -j RETURN
+        ${IPT} -A MINIFW-DOCKER-INPUT-MANUAL -j DROP
 
         # Flush DOCKER-USER if exist, create it if absent
         if chain_exists 'DOCKER-USER'; then
@@ -706,6 +696,12 @@ start() {
         # Pipe new connection through MINIFW-DOCKER-INPUT-MANUAL
         ${IPT} -A DOCKER-USER -i ${INT} -m state  --state NEW -j MINIFW-DOCKER-INPUT-MANUAL
         ${IPT} -A DOCKER-USER -j RETURN
+
+        # Create basic rules to allow container to talk to the host (unless manual mode)
+        # via the default docker bridge
+        if ! is_docker_manual; then
+            /sbin/iptables -I INPUT -i docker0 -p tcp --sport 1024:65535 -s 172.16.0.0/12 -d 172.17.0.1 -j ACCEPT
+        fi
     fi
 
 
@@ -782,66 +778,6 @@ start() {
             ${IPT6} -A INPUT -p udp --dport ${port} -j ONLYTRUSTED
         fi
     done
-
-
-    if is_docker_enabled; then
-        # WARN: IPv6 not yet supported
-
-        # Public services defined in SERVICESTCP1 & SERVICESUDP1
-        for dstport in ${SERVICESTCP1}; do
-            ${IPT} -I MINIFW-DOCKER-PUB -p tcp --dport "${dstport}" -j RETURN
-        done
-
-        for dstport in ${SERVICESUDP1}; do
-            ${IPT} -I MINIFW-DOCKER-PUB -p udp --dport "${dstport}" -j RETURN
-        done
-
-        # Privileged services (accessible from privileged & trusted IPs)
-        for dstport in ${SERVICESTCP2}; do
-            for srcip in ${PRIVILEGIEDIPS}; do
-                if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
-                fi
-            done
-
-            for srcip in ${TRUSTEDIPS}; do
-                if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
-                fi
-            done
-        done
-
-        for dstport in ${SERVICESUDP2}; do
-            for srcip in ${PRIVILEGIEDIPS}; do
-                if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
-                fi
-            done
-
-            for srcip in ${TRUSTEDIPS}; do
-                if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-PRIVILEGED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
-                fi
-            done
-        done
-
-        # Trusted services (accessible from trusted IPs)
-        for dstport in ${SERVICESTCP3}; do
-            for srcip in ${TRUSTEDIPS}; do
-                if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-TRUSTED -p tcp -s "${srcip}" --dport "${dstport}" -j RETURN
-                fi
-            done
-        done
-
-        for dstport in ${SERVICESUDP3}; do
-            for srcip in ${TRUSTEDIPS}; do
-                if ! is_ipv6 ${srcip}; then
-                    ${IPT} -I MINIFW-DOCKER-TRUSTED -p udp -s "${srcip}" --dport "${dstport}" -j RETURN
-                fi
-            done
-        done
-    fi
 
     # External services
     ###################
@@ -1099,12 +1035,6 @@ stop() {
 
         ${IPT} -F MINIFW-DOCKER-INPUT-MANUAL
         ${IPT} -X MINIFW-DOCKER-INPUT-MANUAL
-        ${IPT} -F MINIFW-DOCKER-PUB
-        ${IPT} -X MINIFW-DOCKER-PUB
-        ${IPT} -F MINIFW-DOCKER-PRIVILEGED
-        ${IPT} -X MINIFW-DOCKER-PRIVILEGED
-        ${IPT} -F MINIFW-DOCKER-TRUSTED
-        ${IPT} -X MINIFW-DOCKER-TRUSTED
     else
         ${IPT} -t nat -F
     fi
