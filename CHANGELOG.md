@@ -11,6 +11,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Removed
 
+* Remove secondary Evolix office IPs from TRUSTEDIPS
+
 ### Fixed
 
 ### Security
