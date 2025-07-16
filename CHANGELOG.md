@@ -11,11 +11,15 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Removed
 
-* Remove secondary Evolix office IPs from TRUSTEDIPS
-
 ### Fixed
 
 ### Security
+
+## [25.07] - 2025-07-16
+
+### Removed
+
+* Remove secondary Evolix office IPs from TRUSTEDIPS
 
 ## [25.05] - 2025-05-22
 
