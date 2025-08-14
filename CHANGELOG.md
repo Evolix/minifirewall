@@ -5,6 +5,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
+* new chain MINIFW-DOCKER-USER to manipulate DOCKER-USER with minifirewall
+
 ### Changed
 
 ### Deprecated
