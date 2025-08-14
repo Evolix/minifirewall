@@ -11,6 +11,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Removed
 
+* removed the version in configuration file
+
 ### Fixed
 
 ### Security
