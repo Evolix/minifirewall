@@ -7,6 +7,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Changed
 
+* split main logic from SysVinit script, and add systemd unit
+
 ### Deprecated
 
 ### Removed
