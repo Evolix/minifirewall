@@ -150,7 +150,7 @@ is_interactive() {
     test "${INTERACTIVE}" = "1"
 }
 remove_colors() {
-    sed -r 's/\x1B\[(;?[0-9]{1,3})+[mGK]//g'
+    sed -r 's/\x1B\[(;?[0-9]{1,3})*[mGK]//g'
 }
 syslog_info() {
     if [ -x "${LOGGER_BIN}" ]; then

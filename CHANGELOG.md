@@ -19,6 +19,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Fixed
 
+* fix remove_colors for RESET sequence
+
 ### Security
 
 ## [25.07] - 2025-07-16
