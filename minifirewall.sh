@@ -1158,8 +1158,7 @@ safe_start() {
 
 exit_if_not_systemd() {
     if [ $PPID -ne 1 ]; then
-        echo "Error: Please use systemd ${PROGNAME}.service." 1>&2
-        show_help
+        echo "Error: Please use \`systemctl ACTION ${PROGNAME}.service'." >&2
         exit 1
     fi
 }
