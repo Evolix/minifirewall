@@ -9,6 +9,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 * group additional scripts in utils directory
 * split main logic from SysVinit script, and add systemd unit
+* systemd unit optimization
 
 ### Deprecated
 

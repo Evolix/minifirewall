@@ -2,8 +2,6 @@
 
 [Unit]
 Description=Control the firewall
-After=network-online.target
-Wants=network-online.target
 
 [Service]
 Type=oneshot
@@ -15,4 +13,4 @@ ExecStart=/usr/local/sbin/minifirewall start
 ExecStop=/usr/local/sbin/minifirewall stop
 
 [Install]
-WantedBy=default.target
+WantedBy=network-pre.target
