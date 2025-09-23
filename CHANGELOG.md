@@ -15,6 +15,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Removed
 
+* the cron job is never used, let's remove it
+
 ### Fixed
 
 * fix remove_colors for RESET sequence
