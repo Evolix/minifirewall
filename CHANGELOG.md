@@ -5,6 +5,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
+* show status after start/stop/restart from SysV init script
+
 ### Changed
 
 * group additional scripts in utils directory
