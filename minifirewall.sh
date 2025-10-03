@@ -1,39 +1,12 @@
 #!/bin/sh
 # shellcheck disable=SC2059
 
-# minifirewall is a shell script for easy firewalling on a standalone server
-# It uses netfilter/iptables http://netfilter.org/ designed for recent Linux kernel
-# See https://gitea.evolix.org/evolix/minifirewall
-
-# Copyright (c) 2007-2025 Evolix
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 3
-# of the License.
-
-# Description
-# script for standalone server
-
-# Start or stop minifirewall
-#
-
-### BEGIN INIT INFO
-# Provides:          minifirewall
-# Required-Start:
-# Required-Stop:
-# Should-Start:      $network $syslog $named
-# Should-Stop:       $syslog
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: start and stop the firewall
-# Description:       Firewall designed for standalone server
-### END INIT INFO
-
-VERSION="25.08"
-
 PROGNAME="minifirewall"
 # shellcheck disable=SC2034
-DESC="Firewall designed for standalone server"
+REPOSITORY="https://gitea.evolix.org/evolix/minifirewall"
+
+VERSION="25.08"
+readonly VERSION
 
 set -u
 
@@ -1189,11 +1162,17 @@ safe_start() {
     fi
 }
 
+exit_if_not_systemd() {
+    if [ $PPID -ne 1 ]; then
+        echo "Error: Please use \`systemctl ACTION ${PROGNAME}.service'." >&2
+        exit 1
+    fi
+}
 show_version() {
     cat <<END
 ${PROGNAME} version ${VERSION}
 
-Copyright 2007-2024 Evolix <info@evolix.fr>.
+Copyright 2007-2025 Evolix <info@evolix.fr>.
 
 ${PROGNAME} comes with ABSOLUTELY NO WARRANTY.
 This program is free software; you can redistribute it and/or
@@ -1204,31 +1183,33 @@ END
 }
 show_help() {
     cat <<END
-${PROGNAME} ${DESC}
+${PROGNAME} is wrapper around netfilter/iptables for easy local firewalling on Linux.
 
 END
     show_usage
 }
 show_usage() {
     cat <<END
-Usage: ${PROGNAME} [COMMAND]
+Basic ${PROGNAME} commands via systemd:
+  systemctl start ${PROGNAME}
+  systemctl stop ${PROGNAME}
+  systemctl restart ${PROGNAME}
+  systemctl status ${PROGNAME}
 
-Commands
- start                  Start minifirewall
- safe-start             Start minifirewall, with baground safety checks
- stop                   Stop minifirewall
- restart                Stop then start minifirewall
- safe-restart           Restart minifirewall, with background safety checks
- status                 Print minifirewall status
- reset                  Reset iptables tables
- check-active-config    Check if active config is up-to-date with stored config
- version                Print version and exit
- help                   Print this message and exit
+Other ${PROGNAME} commands:
+  safe-start             Start minifirewall, with background safety checks
+  safe-restart           Restart minifirewall, with background safety checks
+  status                 Print minifirewall status
+  reset                  Reset iptables tables
+  check-active-config    Check if active config is up-to-date with stored config
+  {version|--version|-V} Print version and exit
+  {help|--help|-h|-?}    Print this message and exit
 END
 }
 
 case "${1:-''}" in
     start)
+        exit_if_not_systemd
         source_configuration
         check_unpersisted_state
 
@@ -1243,6 +1224,7 @@ case "${1:-''}" in
     ;;
 
     stop)
+        exit_if_not_systemd
         source_configuration
         check_unpersisted_state
 
@@ -1264,6 +1246,7 @@ case "${1:-''}" in
     ;;
 
     restart)
+        exit_if_not_systemd
         source_configuration
         check_unpersisted_state
 
@@ -1289,11 +1272,11 @@ case "${1:-''}" in
         check_active_configuration
     ;;
 
-    version)
+    version|--version|-V)
         show_version
     ;;
 
-    help)
+    help|-h|-\?|--help)
         show_help
     ;;
 

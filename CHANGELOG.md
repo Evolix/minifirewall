@@ -5,13 +5,25 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
+* show status after start/stop/restart from SysV init script
+
 ### Changed
+
+* group additional scripts in utils directory
+* split main logic from SysVinit script, and add systemd unit
+* systemd unit optimization
 
 ### Deprecated
 
 ### Removed
 
+* the cron job is never used, let's remove it
+
 ### Fixed
+
+* fix remove_colors for RESET sequence
+
+### Security
 
 ## [25.08] - 2025-08-31
 
