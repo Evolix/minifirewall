@@ -1199,6 +1199,7 @@ Basic ${PROGNAME} commands via systemd:
 Other ${PROGNAME} commands:
   safe-start             Start minifirewall, with background safety checks
   safe-restart           Restart minifirewall, with background safety checks
+  force-stop             Force minifirewall to stop (disregarding systemd)
   status                 Print minifirewall status
   reset                  Reset iptables tables
   check-active-config    Check if active config is up-to-date with stored config
@@ -1225,6 +1226,13 @@ case "${1:-''}" in
 
     stop)
         exit_if_not_systemd
+        source_configuration
+        check_unpersisted_state
+
+        stop
+    ;;
+
+    force-stop)
         source_configuration
         check_unpersisted_state
 

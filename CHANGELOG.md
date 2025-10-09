@@ -5,6 +5,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
+* add "force-stop" command to stop the firewall, whatever state the systemd service might be in
+
 ### Changed
 
 ### Deprecated
