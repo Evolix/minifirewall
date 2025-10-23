@@ -152,6 +152,7 @@ is_interactive() {
 remove_colors() {
     sed -r 's/\x1B\[(;?[0-9]{1,3})+[mGK]//g'
 }
+# Log functions for syslog/journald
 syslog_info() {
     if [ -x "${LOGGER_BIN}" ]; then
         ${LOGGER_BIN} -t "${PROGNAME}" -p daemon.info "$1"
@@ -160,6 +161,17 @@ syslog_info() {
 syslog_error() {
     if [ -x "${LOGGER_BIN}" ]; then
         ${LOGGER_BIN} -t "${PROGNAME}" -p daemon.error "$1"
+    fi
+}
+# Log functions used only when not inside a systemd call
+print_stdout() {
+    if is_not_systemd; then
+        printf "$@"
+    fi
+}
+print_stderr() {
+    if is_not_systemd; then
+        printf "$@"
     fi
 }
 sort_values() {
@@ -196,7 +208,7 @@ chain_exists() {
 source_file_or_error() {
     file=$1
     syslog_info "sourcing \`${file}'"
-    printf "${BLUE}sourcing \`%s': ${RESET}" "${file}"
+    print_stdout "${BLUE}sourcing \`%s': ${RESET}" "${file}"
 
     tmpfile=$(mktemp --tmpdir=/tmp minifirewall.XXX)
     . "${file}" 2>"${tmpfile}" >&2
@@ -204,19 +216,20 @@ source_file_or_error() {
     if [ -s "${tmpfile}" ]; then
         syslog_error "Error while sourcing ${file}"
     
-        printf "${RED}Error${RESET}\n"
+        print_stdout "${RED}Error${RESET}\n"
         
         printf "${RED}%s returns standard or error output (see below). Stopping.${RESET}\n" "${file}" >&2
         cat "${tmpfile}" >&2
         exit 1
     else
-        printf "${GREEN}Ok${RESET}\n"
+        print_stdout "${GREEN}Ok${RESET}\n"
     fi
     rm -f "${tmpfile}"
 }
 source_configuration() {
     if ! test -f ${config_file}; then
-        printf "${RED}%s does not exist${RESET}\n" "${config_file}" >&2
+        syslog_error "${config_file} does not exist"
+        print_stderr "${RED}%s does not exist${RESET}\n" "${config_file}"
 
         ## We still want to deal with this really old configuration file
         ## even if it has been deprecated since Debian 8
@@ -426,11 +439,11 @@ report_state_changes() {
 
 start() {
     syslog_info "starting"
-    printf "${BOLD}${PROGNAME} starting${RESET}\n"
+    print_stdout "${BOLD}${PROGNAME} starting${RESET}\n"
 
     # Stop and warn if error!
     set -e
-    trap 'printf "${RED}${PROGNAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed" ' INT TERM EXIT
+    trap 'flush_custom_chains; delete_custom_chains; printf "${RED}${PROGNAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed"' INT TERM EXIT
 
     # sysctl network security settings
     ##################################
@@ -449,7 +462,7 @@ start() {
     source_includes
 
     syslog_info "executing macros"
-    printf "${BLUE}executing macros: ${RESET}"
+    print_stdout "${BLUE}executing macros: ${RESET}"
 
     # IP/ports lists are sorted to have consistent ordering
     # You can disable this feature by simply commenting the following lines
@@ -809,12 +822,12 @@ start() {
     # Finish
     ########################
 
-    printf "${GREEN}Ok${RESET}\n"
+    print_stdout "${GREEN}Ok${RESET}\n"
 
     trap - INT TERM EXIT
 
     syslog_info "started"
-    printf "${GREEN}${BOLD}${PROGNAME} started${RESET}\n"
+    print_stdout "${GREEN}${BOLD}${PROGNAME} started${RESET}\n"
 
     # No need to exit on error anymore
     set +e
@@ -827,9 +840,9 @@ start() {
 
 stop() {
     syslog_info "stopping"
-    printf "${BOLD}${PROGNAME} stopping${RESET}\n"
+    print_stdout "${BOLD}${PROGNAME} stopping${RESET}\n"
 
-    printf "${BLUE}flushing all rules and accepting everything${RESET}\n"
+    print_stdout "${BLUE}flushing all rules and accepting everything${RESET}\n"
 
     # Save previous state (without colors)
     mkdir -p "$(dirname "${STATE_FILE_PREVIOUS}")"
@@ -876,7 +889,7 @@ stop() {
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" "${ACTIVE_CONFIG}"
 
     syslog_info "stopped"
-    printf "${GREEN}${BOLD}${PROGNAME} stopped${RESET}\n"
+    print_stdout "${GREEN}${BOLD}${PROGNAME} stopped${RESET}\n"
 }
 
 status() {
@@ -911,7 +924,7 @@ status_without_numbers() {
 
 reset() {
     syslog_info "resetting"
-    printf "${BOLD}${PROGNAME} resetting${RESET}\n"
+    print_stdout "${BOLD}${PROGNAME} resetting${RESET}\n"
 
     ${IPT} -Z
     if is_ipv6_enabled; then
@@ -926,7 +939,7 @@ reset() {
     fi
 
     syslog_info "reset"
-    printf "${GREEN}${BOLD}${PROGNAME} reset${RESET}\n"
+    print_stdout "${GREEN}${BOLD}${PROGNAME} reset${RESET}\n"
 }
 
 create_custom_chains() {
@@ -1203,9 +1216,11 @@ safe_start() {
         syslog_info "safe-restart in non-interactive mode ; if safety lock (${SAFETY_LOCK}) is not removed in the next $(safety_timer) seconds, minifirewall will be stopped."
     fi
 }
-
+is_not_systemd() {
+   test $PPID -ne 1
+}
 exit_if_not_systemd() {
-    if [ $PPID -ne 1 ]; then
+    if is_not_systemd; then
         echo "Error: Please use \`systemctl ACTION ${PROGNAME}.service'." >&2
         exit 1
     fi
