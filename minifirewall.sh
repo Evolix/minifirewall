@@ -435,134 +435,13 @@ start() {
     # sysctl network security settings
     ##################################
 
-    # Set 1 to ignore broadcast pings (default)
-    : "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS:=1}"
-    # Set 1 to ignore bogus ICMP responses (default)
-    : "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES:=1}"
-    # Set 0 to disable source routing (default)
-    : "${SYSCTL_ACCEPT_SOURCE_ROUTE:=0}"
-    # Set 1 to enable TCP SYN cookies (default)
-    # cf http://cr.yp.to/syncookies.html
-    : "${SYSCTL_TCP_SYNCOOKIES:=1}"
-    # Set 0 to disable ICMP redirects (default)
-    : "${SYSCTL_ICMP_REDIRECTS:=0}"
-    # Set 1 to enable Reverse Path filtering (default)
-    # Set 0 if VRRP is used
-    : "${SYSCTL_RP_FILTER:=1}"
-    # Set 1 to log packets with inconsistent address (default)
-    : "${SYSCTL_LOG_MARTIANS:=1}"
-
-    syslog_info "configuring sysctl"
-    printf "${BLUE}configuring sysctl: ${RESET}"
-
-    if [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "1" ] || [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "0" ]; then
-        echo "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
-        # Apparently not applicable to IPv6
-    else
-        printf "${RED}Error${RESET}\n"
-        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS" "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" >&2
-        exit 1
-    fi
-
-    if [ "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" = "1" ] || [ "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" = "0" ]; then
-        echo "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
-        # Apparently not applicable to IPv6
-    else
-        printf "${RED}Error${RESET}\n"
-        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES" "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" >&2
-        exit 1
-    fi
-
-    if [ "${SYSCTL_ACCEPT_SOURCE_ROUTE}" = "1" ] || [ "${SYSCTL_ACCEPT_SOURCE_ROUTE}" = "0" ]; then
-        for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_source_route; do
-            echo "${SYSCTL_ACCEPT_SOURCE_ROUTE}" > "${proc_sys_file}"
-        done
-        if is_ipv6_enabled; then
-            for proc_sys_file in /proc/sys/net/ipv6/conf/*/accept_source_route; do
-                echo "${SYSCTL_ACCEPT_SOURCE_ROUTE}" > "${proc_sys_file}"
-            done
-        fi
-    else
-        printf "${RED}Error${RESET}\n"
-        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ACCEPT_SOURCE_ROUTE" "${SYSCTL_ACCEPT_SOURCE_ROUTE}" >&2
-        exit 1
-    fi
-
-    if [ "${SYSCTL_TCP_SYNCOOKIES}" = "1" ] || [ "${SYSCTL_TCP_SYNCOOKIES}" = "0" ]; then
-        echo "${SYSCTL_TCP_SYNCOOKIES}" > /proc/sys/net/ipv4/tcp_syncookies
-        # Apparently not applicable to IPv6
-    else
-        printf "${RED}Error${RESET}\n"
-        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_TCP_SYNCOOKIES" "${SYSCTL_TCP_SYNCOOKIES}" >&2
-        exit 1
-    fi
-
-    if [ "${SYSCTL_ICMP_REDIRECTS}" = "1" ] || [ "${SYSCTL_ICMP_REDIRECTS}" = "0" ]; then
-        for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_redirects; do
-            echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
-        done
-        for proc_sys_file in /proc/sys/net/ipv4/conf/*/send_redirects; do
-            echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
-        done
-        if is_ipv6_enabled; then
-            for proc_sys_file in /proc/sys/net/ipv6/conf/*/accept_redirects; do
-                echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
-            done
-        fi
-    else
-        printf "${RED}Error${RESET}\n"
-        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_REDIRECTS" "${SYSCTL_ICMP_REDIRECTS}" >&2
-        exit 1
-    fi
-
-    if [ "${SYSCTL_RP_FILTER}" = "1" ] || [ "${SYSCTL_RP_FILTER}" = "0" ]; then
-        for proc_sys_file in /proc/sys/net/ipv4/conf/*/rp_filter; do
-            echo "${SYSCTL_RP_FILTER}" > "${proc_sys_file}"
-        done
-        # Apparently not applicable to IPv6
-    else
-        printf "${RED}Error${RESET}\n"
-        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_RP_FILTER" "${SYSCTL_RP_FILTER}" >&2
-        exit 1
-    fi
-
-    if [ "${SYSCTL_LOG_MARTIANS}" = "1" ] || [ "${SYSCTL_LOG_MARTIANS}" = "0" ]; then
-        for proc_sys_file in /proc/sys/net/ipv4/conf/*/log_martians; do
-            echo "${SYSCTL_LOG_MARTIANS}" > "${proc_sys_file}"
-        done
-        # Apparently not applicable to IPv6
-    else
-        printf "${RED}Error${RESET}\n"
-        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_LOG_MARTIANS" "${SYSCTL_LOG_MARTIANS}" >&2
-        exit 1
-    fi
-
-    printf "${GREEN}Ok${RESET}\n"
+    sysctl_config
 
     # IPTables configuration
     ########################
 
-    ${IPT} -N LOG_DROP
-    ${IPT} -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
-    ${IPT} -A LOG_DROP -j DROP
-    ${IPT} -N LOG_ACCEPT
-    ${IPT} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
-    ${IPT} -A LOG_ACCEPT -j ACCEPT
-    # Chain for restrictions (blacklist IPs/ranges)
-    ${IPT} -N NEEDRESTRICT
-    if is_ipv6_enabled; then
-        ${IPT6} -N LOG_DROP
-        ${IPT6} -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
-        ${IPT6} -A LOG_DROP -j DROP
-        ${IPT6} -N LOG_ACCEPT
-        ${IPT6} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
-        ${IPT6} -A LOG_ACCEPT -j ACCEPT
-        ${IPT6} -N NEEDRESTRICT
-    fi
-    if is_docker_enabled; then
-        ${IPT} -N MINIFW-DOCKER-INPUT-MANUAL
-        ${IPT} -N MINIFW-DOCKER-USER
-    fi
+    delete_custom_chains
+    create_custom_chains
 
     # Source additional rules and commands
     # * from legacy configuration file (/etc/default/minifirewall)
@@ -598,12 +477,6 @@ start() {
     BACKUPSERVERS=$(sort_values ${BACKUPSERVERS})
 
     # Trusted ip addresses
-    ${IPT} -N ONLYTRUSTED
-    ${IPT} -A ONLYTRUSTED -j LOG_DROP
-    if is_ipv6_enabled; then
-        ${IPT6} -N ONLYTRUSTED
-        ${IPT6} -A ONLYTRUSTED -j LOG_DROP
-    fi
     for ip in ${TRUSTEDIPS}; do
         if is_ipv6 ${ip}; then
             if is_ipv6_enabled; then
@@ -616,12 +489,6 @@ start() {
 
     # Privilegied ip addresses
     # (trusted ip addresses *are* privilegied)
-    ${IPT} -N ONLYPRIVILEGIED
-    ${IPT} -A ONLYPRIVILEGIED -j ONLYTRUSTED
-    if is_ipv6_enabled; then
-        ${IPT6} -N ONLYPRIVILEGIED
-        ${IPT6} -A ONLYPRIVILEGIED -j ONLYTRUSTED
-    fi
     for ip in ${PRIVILEGIEDIPS}; do
         if is_ipv6 ${ip}; then
             if is_ipv6_enabled; then
@@ -660,13 +527,6 @@ start() {
         # Chains MINIFW-DOCKER-* are created earlier, to allow usage in additionnal config/command files
         ${IPT} -A MINIFW-DOCKER-INPUT-MANUAL -j DROP
         ${IPT} -A MINIFW-DOCKER-USER -j RETURN
-
-        # Flush DOCKER-USER if exist, create it if absent
-        if chain_exists 'DOCKER-USER'; then
-            ${IPT} -F DOCKER-USER
-        else
-            ${IPT} -N DOCKER-USER
-        fi;
 
         # Pipe new connection through MINIFW-DOCKER-INPUT-MANUAL
         ${IPT} -A DOCKER-USER -i ${INT} -m state  --state NEW -j MINIFW-DOCKER-INPUT-MANUAL
@@ -986,35 +846,14 @@ stop() {
         ${IPT6} -F OUTPUT
     fi
 
-    ${IPT} -F LOG_DROP
-    ${IPT} -F LOG_ACCEPT
-    ${IPT} -F ONLYTRUSTED
-    ${IPT} -F ONLYPRIVILEGIED
-    ${IPT} -F NEEDRESTRICT
-    if is_ipv6_enabled; then
-        ${IPT6} -F LOG_DROP
-        ${IPT6} -F LOG_ACCEPT
-        ${IPT6} -F ONLYTRUSTED
-        ${IPT6} -F ONLYPRIVILEGIED
-        ${IPT6} -F NEEDRESTRICT
-    fi
+    flush_custom_chains
 
     ${IPT} -t mangle -F
     if is_ipv6_enabled; then
         ${IPT6} -t mangle -F
     fi
 
-    if is_docker_enabled; then
-        # WARN: IPv6 not yet supported
-
-        ${IPT} -F DOCKER-USER
-        ${IPT} -A DOCKER-USER -j RETURN
-
-        ${IPT} -F MINIFW-DOCKER-INPUT-MANUAL
-        ${IPT} -X MINIFW-DOCKER-INPUT-MANUAL
-        ${IPT} -F MINIFW-DOCKER-USER
-        ${IPT} -X MINIFW-DOCKER-USER
-    else
+    if ! is_docker_enabled; then
         ${IPT} -t nat -F
     fi
 
@@ -1032,19 +871,7 @@ stop() {
     #${IPT} -t nat -P PREROUTING ACCEPT
     #${IPT} -t nat -P POSTROUTING ACCEPT
 
-    # Delete non-standard chains
-    ${IPT} -X LOG_DROP
-    ${IPT} -X LOG_ACCEPT
-    ${IPT} -X ONLYPRIVILEGIED
-    ${IPT} -X ONLYTRUSTED
-    ${IPT} -X NEEDRESTRICT
-    if is_ipv6_enabled; then
-        ${IPT6} -X LOG_DROP
-        ${IPT6} -X LOG_ACCEPT
-        ${IPT6} -X ONLYPRIVILEGIED
-        ${IPT6} -X ONLYTRUSTED
-        ${IPT6} -X NEEDRESTRICT
-    fi
+    delete_custom_chains
 
     rm -f "${STATE_FILE_LATEST}" "${STATE_FILE_CURRENT}" "${ACTIVE_CONFIG}"
 
@@ -1100,6 +927,221 @@ reset() {
 
     syslog_info "reset"
     printf "${GREEN}${BOLD}${PROGNAME} reset${RESET}\n"
+}
+
+create_custom_chains() {
+    # syslog_info "create custom chains"
+    ${IPT} -N LOG_DROP
+    ${IPT} -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
+    ${IPT} -A LOG_DROP -j DROP
+    ${IPT} -N LOG_ACCEPT
+    ${IPT} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
+    ${IPT} -A LOG_ACCEPT -j ACCEPT
+
+    ${IPT} -N NEEDRESTRICT
+
+    ${IPT} -N ONLYTRUSTED
+    ${IPT} -A ONLYTRUSTED -j LOG_DROP
+    ${IPT} -N ONLYPRIVILEGIED
+    ${IPT} -A ONLYPRIVILEGIED -j ONLYTRUSTED
+
+    if is_ipv6_enabled; then
+        ${IPT6} -N LOG_DROP
+        ${IPT6} -A LOG_DROP -j LOG  --log-prefix '[IPTABLES DROP] : '
+        ${IPT6} -A LOG_DROP -j DROP
+        ${IPT6} -N LOG_ACCEPT
+        ${IPT6} -A LOG_ACCEPT -j LOG  --log-prefix '[IPTABLES ACCEPT] : '
+        ${IPT6} -A LOG_ACCEPT -j ACCEPT
+
+        ${IPT6} -N NEEDRESTRICT
+
+        ${IPT6} -N ONLYTRUSTED
+        ${IPT6} -A ONLYTRUSTED -j LOG_DROP
+        ${IPT6} -N ONLYPRIVILEGIED
+        ${IPT6} -A ONLYPRIVILEGIED -j ONLYTRUSTED
+    fi
+    
+    if is_docker_enabled; then
+        ${IPT} -N MINIFW-DOCKER-INPUT-MANUAL
+        ${IPT} -N MINIFW-DOCKER-USER
+
+        # Flush DOCKER-USER if exist, create it if absent
+        if chain_exists 'DOCKER-USER'; then
+            ${IPT} -F DOCKER-USER
+        else
+            ${IPT} -N DOCKER-USER
+        fi;
+    fi
+}
+delete_custom_chains() {
+    # syslog_info "delete custom chains"
+    # No error, no log
+    set +o errexit
+    # Delete non-standard chains
+    ${IPT} -X LOG_DROP 2>/dev/null
+    ${IPT} -X LOG_ACCEPT 2>/dev/null
+
+    ${IPT} -X ONLYPRIVILEGIED 2>/dev/null
+    ${IPT} -X ONLYTRUSTED 2>/dev/null
+
+    ${IPT} -X NEEDRESTRICT 2>/dev/null
+
+    if is_ipv6_enabled; then
+        ${IPT6} -X LOG_DROP 2>/dev/null
+        ${IPT6} -X LOG_ACCEPT 2>/dev/null
+
+        ${IPT6} -X ONLYPRIVILEGIED 2>/dev/null
+        ${IPT6} -X ONLYTRUSTED 2>/dev/null
+
+        ${IPT6} -X NEEDRESTRICT 2>/dev/null
+    fi
+
+    if is_docker_enabled; then
+        # WARN: IPv6 not yet supported
+        ${IPT} -A DOCKER-USER -j RETURN 2>/dev/null
+
+        ${IPT} -X MINIFW-DOCKER-INPUT-MANUAL 2>/dev/null
+        ${IPT} -X MINIFW-DOCKER-USER 2>/dev/null
+    fi
+    # restore exit on error
+    set -o errexit
+}
+flush_custom_chains() {
+    # syslog_info "flush custom chains"
+    # No error, no log
+    set +o errexit
+    ${IPT} -F LOG_DROP 2>/dev/null
+    ${IPT} -F LOG_ACCEPT 2>/dev/null
+
+    ${IPT} -F ONLYTRUSTED 2>/dev/null
+    ${IPT} -F ONLYPRIVILEGIED 2>/dev/null
+
+    ${IPT} -F NEEDRESTRICT 2>/dev/null
+
+    if is_ipv6_enabled; then
+        ${IPT6} -F LOG_DROP 2>/dev/null
+        ${IPT6} -F LOG_ACCEPT 2>/dev/null
+
+        ${IPT6} -F ONLYTRUSTED 2>/dev/null
+        ${IPT6} -F ONLYPRIVILEGIED 2>/dev/null
+
+        ${IPT6} -F NEEDRESTRICT 2>/dev/null
+    fi
+    
+    if is_docker_enabled; then
+        # WARN: IPv6 not yet supported
+        ${IPT} -F DOCKER-USER 2>/dev/null
+        ${IPT} -F MINIFW-DOCKER-INPUT-MANUAL 2>/dev/null
+        ${IPT} -F MINIFW-DOCKER-USER 2>/dev/null
+    fi
+    # restore exit on error
+    set -o errexit
+}
+
+sysctl_config() {
+    # Set 1 to ignore broadcast pings (default)
+    : "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS:=1}"
+    # Set 1 to ignore bogus ICMP responses (default)
+    : "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES:=1}"
+    # Set 0 to disable source routing (default)
+    : "${SYSCTL_ACCEPT_SOURCE_ROUTE:=0}"
+    # Set 1 to enable TCP SYN cookies (default)
+    # cf http://cr.yp.to/syncookies.html
+    : "${SYSCTL_TCP_SYNCOOKIES:=1}"
+    # Set 0 to disable ICMP redirects (default)
+    : "${SYSCTL_ICMP_REDIRECTS:=0}"
+    # Set 1 to enable Reverse Path filtering (default)
+    # Set 0 if VRRP is used
+    : "${SYSCTL_RP_FILTER:=1}"
+    # Set 1 to log packets with inconsistent address (default)
+    : "${SYSCTL_LOG_MARTIANS:=1}"
+
+    syslog_info "configuring sysctl"
+    print_stdout "${BLUE}configuring sysctl: ${RESET}"
+
+    if [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "1" ] || [ "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" = "0" ]; then
+        echo "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+        # Apparently not applicable to IPv6
+    else
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS" "${SYSCTL_ICMP_ECHO_IGNORE_BROADCASTS}" >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" = "1" ] || [ "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" = "0" ]; then
+        echo "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
+        # Apparently not applicable to IPv6
+    else
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES" "${SYSCTL_ICMP_IGNORE_BOGUS_ERROR_RESPONSES}" >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_ACCEPT_SOURCE_ROUTE}" = "1" ] || [ "${SYSCTL_ACCEPT_SOURCE_ROUTE}" = "0" ]; then
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_source_route; do
+            echo "${SYSCTL_ACCEPT_SOURCE_ROUTE}" > "${proc_sys_file}"
+        done
+        if is_ipv6_enabled; then
+            for proc_sys_file in /proc/sys/net/ipv6/conf/*/accept_source_route; do
+                echo "${SYSCTL_ACCEPT_SOURCE_ROUTE}" > "${proc_sys_file}"
+            done
+        fi
+    else
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ACCEPT_SOURCE_ROUTE" "${SYSCTL_ACCEPT_SOURCE_ROUTE}" >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_TCP_SYNCOOKIES}" = "1" ] || [ "${SYSCTL_TCP_SYNCOOKIES}" = "0" ]; then
+        echo "${SYSCTL_TCP_SYNCOOKIES}" > /proc/sys/net/ipv4/tcp_syncookies
+        # Apparently not applicable to IPv6
+    else
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_TCP_SYNCOOKIES" "${SYSCTL_TCP_SYNCOOKIES}" >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_ICMP_REDIRECTS}" = "1" ] || [ "${SYSCTL_ICMP_REDIRECTS}" = "0" ]; then
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/accept_redirects; do
+            echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
+        done
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/send_redirects; do
+            echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
+        done
+        if is_ipv6_enabled; then
+            for proc_sys_file in /proc/sys/net/ipv6/conf/*/accept_redirects; do
+                echo "${SYSCTL_ICMP_REDIRECTS}" > "${proc_sys_file}"
+            done
+        fi
+    else
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_ICMP_REDIRECTS" "${SYSCTL_ICMP_REDIRECTS}" >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_RP_FILTER}" = "1" ] || [ "${SYSCTL_RP_FILTER}" = "0" ]; then
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/rp_filter; do
+            echo "${SYSCTL_RP_FILTER}" > "${proc_sys_file}"
+        done
+        # Apparently not applicable to IPv6
+    else
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_RP_FILTER" "${SYSCTL_RP_FILTER}" >&2
+        exit 1
+    fi
+
+    if [ "${SYSCTL_LOG_MARTIANS}" = "1" ] || [ "${SYSCTL_LOG_MARTIANS}" = "0" ]; then
+        for proc_sys_file in /proc/sys/net/ipv4/conf/*/log_martians; do
+            echo "${SYSCTL_LOG_MARTIANS}" > "${proc_sys_file}"
+        done
+        # Apparently not applicable to IPv6
+    else
+        printf "${RED}Error${RESET}\n"
+        printf "${RED}Invalid %s value '%s', must be '0' or '1'.${RESET}\n" "SYSCTL_LOG_MARTIANS" "${SYSCTL_LOG_MARTIANS}" >&2
+        exit 1
+    fi
+
+    print_stdout "${GREEN}Ok${RESET}\n"
 }
 
 safety_timer() {

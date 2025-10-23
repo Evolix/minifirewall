@@ -7,6 +7,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Changed
 
+* extract functions to reset/delete chains on error and before start
+
 ### Deprecated
 
 ### Removed
