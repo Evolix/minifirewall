@@ -442,7 +442,7 @@ start() {
     print_stdout "${BOLD}${PROGNAME} starting${RESET}\n"
 
     # Stop and warn if error!
-    set -e
+    set -o errexit
     trap 'flush_custom_chains; delete_custom_chains; printf "${RED}${PROGNAME} failed : an error occured during startup.${RESET}\n"; syslog_error "failed"' INT TERM EXIT
 
     # sysctl network security settings
@@ -830,7 +830,7 @@ start() {
     print_stdout "${GREEN}${BOLD}${PROGNAME} started${RESET}\n"
 
     # No need to exit on error anymore
-    set +e
+    set +o errexit
 
     # save active configuration
     save_active_configuration "${ACTIVE_CONFIG}"
