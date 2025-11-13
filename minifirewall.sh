@@ -1221,8 +1221,9 @@ is_not_systemd() {
    test $PPID -ne 1
 }
 exit_if_not_systemd() {
-    if is_not_systemd; then
-        echo "Error: Please use \`systemctl ACTION ${PROGNAME}.service'." >&2
+    action=$1
+    if is_not_systemd && [ "${IGNORE_SYSTEMD}" -ne 1 ]; then
+        echo "Error: Please use \`systemctl ${action} ${PROGNAME}.service'." >&2
         exit 1
     fi
 }
@@ -1254,21 +1255,73 @@ Basic ${PROGNAME} commands via systemd:
   systemctl restart ${PROGNAME}
   systemctl status ${PROGNAME}
 
-Other ${PROGNAME} commands:
+Other direct commands:
   safe-start             Start minifirewall, with background safety checks
   safe-restart           Restart minifirewall, with background safety checks
-  force-stop             Force minifirewall to stop (disregarding systemd)
   status                 Print minifirewall status
   reset                  Reset iptables tables
   check-active-config    Check if active config is up-to-date with stored config
   {version|--version|-V} Print version and exit
   {help|--help|-h|-?}    Print this message and exit
+
+Options:
+  --ignore-systemd       Execute action even outside of systemd
 END
 }
 
-case "${1:-''}" in
+IGNORE_SYSTEMD=0
+ACTION=''
+
+# Empty arguments
+if [ $# -lt 1 ]; then
+    show_usage
+    exit 128
+fi
+
+# Parse options, based on https://gist.github.com/deshion/10d3cb5f88a21671e17a
+while :; do
+    case ${1:-''} in
+        start|safe-start|stop|status|reset|restart|safe-restart|stop-if-locked|check-active-config)
+            ACTION="${1}"
+        ;;
+        force-stop)
+            IGNORE_SYSTEMD=1
+            ACTION="stop"
+        ;;
+
+        --ignore-systemd)
+            IGNORE_SYSTEMD=1
+        ;;
+
+        version|--version|-V)
+            show_version
+            exit 0
+        ;;
+
+        help|-h|-\?|--help)
+            show_help
+            exit 0
+        ;;
+
+        *)
+            # Default case: If no more options then break out of the loop.
+            break
+        ;;
+    esac
+
+    shift
+done
+
+# Empty action
+if [ -z "${ACTION}" ]; then
+    printf "You must provide a command\n" >&2
+    show_usage
+    exit 128
+fi
+
+case "${ACTION}" in
     start)
-        exit_if_not_systemd
+        exit_if_not_systemd "${ACTION}"
         source_configuration
         check_unpersisted_state
 
@@ -1283,14 +1336,7 @@ case "${1:-''}" in
     ;;
 
     stop)
-        exit_if_not_systemd
-        source_configuration
-        check_unpersisted_state
-
-        stop
-    ;;
-
-    force-stop)
+        exit_if_not_systemd "${ACTION}"
         source_configuration
         check_unpersisted_state
 
@@ -1312,7 +1358,7 @@ case "${1:-''}" in
     ;;
 
     restart)
-        exit_if_not_systemd
+        exit_if_not_systemd "${ACTION}"
         source_configuration
         check_unpersisted_state
 
@@ -1338,16 +1384,8 @@ case "${1:-''}" in
         check_active_configuration
     ;;
 
-    version|--version|-V)
-        show_version
-    ;;
-
-    help|-h|-\?|--help)
-        show_help
-    ;;
-
     *)
-        printf "%s: %s: unknown option\n" "${PROGNAME}" "${1}"
+        printf "%s: %s: unknown command\n" "${PROGNAME}" "${ACTION}" >&2
         show_usage
         exit 128
     ;;

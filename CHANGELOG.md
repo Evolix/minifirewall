@@ -5,6 +5,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
+* Add `--ignore-systemd` option
+
 ### Changed
 
 * don't log to stdout/stderr when called by systemd
