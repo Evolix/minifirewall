@@ -118,6 +118,7 @@ is_color_enabled() {
 if [ -t 1 ]; then
     INTERACTIVE=1
 
+    # shellcheck disable=SC2034
     if is_color_enabled; then
         RED=$(tput setaf 1)
         GREEN=$(tput setaf 2)
@@ -127,7 +128,7 @@ if [ -t 1 ]; then
         CYAN=$(tput setaf 6)
         WHITE=$(tput setaf 7)
         BOLD=$(tput bold)
-        RESET='\e[m'
+        RESET=$(tput sgr0)
     fi
 else
     INTERACTIVE=0

@@ -16,6 +16,8 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Fixed
 
+* Use tput to reset colors
+
 ### Security
 
 ## [25.10.1] - 2025-10-09
