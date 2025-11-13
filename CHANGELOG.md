@@ -5,12 +5,7 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Added
 
-* Add `--ignore-systemd` option
-
 ### Changed
-
-* don't log to stdout/stderr when called by systemd
-* extract functions to reset/delete chains on error and before start
 
 ### Deprecated
 
@@ -18,9 +13,22 @@ and this project **does not adhere to [Semantic Versioning](http://semver.org/sp
 
 ### Fixed
 
-* Use tput to reset colors
-
 ### Security
+
+## [25.11] - 2025-11-13
+
+### Added
+
+* Add `--ignore-systemd` option
+
+### Changed
+
+* don't log to stdout/stderr when called by systemd
+* extract functions to reset/delete chains on error and before start
+
+### Fixed
+
+* Use tput to reset colors
 
 ## [25.10.1] - 2025-10-09
 
