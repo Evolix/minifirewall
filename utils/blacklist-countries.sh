@@ -2,7 +2,8 @@
 
 # Only IPv4 (could be easily IPv6 too)
 
-# use it with /sbin/iptables -I INPUT -m set --match-set countries-blocklist-v4 src -j DROP
+# Usage : sets the ports to protect by this blacklist as PROTECTED (in /etc/default/minifirewall)
+
 
 ripedeny_file=/var/tmp/ripe_deny
 
