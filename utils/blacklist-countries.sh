@@ -21,7 +21,7 @@ for i in CN KR RU; do
 done
 
 /sbin/iptables -D NEEDRESTRICT -m set --match-set countries-blocklist-v4 src -j DROP >/dev/null 2>&1
-sleep 1
+sleep 0.5
 /usr/sbin/ipset destroy countries-blocklist-v4 >/dev/null 2>&1
 
 /usr/sbin/ipset create countries-blocklist-v4 hash:net comment
